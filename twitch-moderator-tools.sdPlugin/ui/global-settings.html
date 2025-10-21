@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Twitch Moderator Tools - Settings</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: transparent;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 14px;
+            color: #d8d8d8;
+        }
+
+        .sdpi-wrapper {
+            max-width: 400px;
+        }
+
+        .sdpi-item {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            background: #3a3a3a;
+            border: 1px solid #5a5a5a;
+            border-radius: 4px;
+            color: #d8d8d8;
+            font-size: 14px;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #9147ff;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #9147ff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        button:hover {
+            background: #7c3aed;
+        }
+
+        button:disabled {
+            background: #5a5a5a;
+            cursor: not-allowed;
+        }
+
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .status.connected {
+            background: #10b981;
+            color: white;
+        }
+
+        .status.disconnected {
+            background: #ef4444;
+            color: white;
+        }
+
+        .status.info {
+            background: #3b82f6;
+            color: white;
+        }
+
+        .info-text {
+            color: #a0a0a0;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+
+        h3 {
+            margin-top: 30px;
+            margin-bottom: 15px;
+            color: #ffffff;
+            font-size: 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="sdpi-wrapper">
+        <div class="sdpi-item">
+            <h3>Authentication</h3>
+            <button id="authButton">Authenticate with Twitch</button>
+            <div id="authStatus" class="status disconnected" style="display: none;">
+                Not Connected
+            </div>
+            <p class="info-text">Click to authenticate with your Twitch account. You'll need moderator permissions for the channel you want to manage.</p>
+        </div>
+
+        <div class="sdpi-item">
+            <h3>Channel Settings</h3>
+            <label for="broadcasterId">Broadcaster Channel Username:</label>
+            <input type="text" id="broadcasterId" placeholder="Enter channel username">
+            <p class="info-text">Enter the Twitch username of the channel you're moderating.</p>
+        </div>
+
+        <div class="sdpi-item">
+            <h3>Client Configuration</h3>
+            <label for="clientId">Twitch Client ID:</label>
+            <input type="text" id="clientId" placeholder="Your Twitch Application Client ID">
+            <p class="info-text">Create a Twitch application at <a href="https://dev.twitch.tv/console/apps" target="_blank" style="color: #9147ff;">dev.twitch.tv/console/apps</a></p>
+        </div>
+
+        <div class="sdpi-item">
+            <button id="saveButton">Save Settings</button>
+        </div>
+    </div>
+
+    <script>
+        // Stream Deck SDK connection
+        const websocket = new WebSocket('ws://127.0.0.1:28196');
+
+        let globalSettings = {};
+
+        websocket.onopen = () => {
+            const registerEvent = {
+                event: 'registerPropertyInspector',
+                uuid: 'com.twitch.moderator.tools'
+            };
+            websocket.send(JSON.stringify(registerEvent));
+
+            // Request global settings
+            websocket.send(JSON.stringify({
+                event: 'getGlobalSettings',
+                context: 'com.twitch.moderator.tools'
+            }));
+        };
+
+        websocket.onmessage = (evt) => {
+            const data = JSON.parse(evt.data);
+
+            if (data.event === 'didReceiveGlobalSettings') {
+                globalSettings = data.payload.settings || {};
+                loadSettings();
+            }
+        };
+
+        function loadSettings() {
+            if (globalSettings.clientId) {
+                document.getElementById('clientId').value = globalSettings.clientId;
+            }
+            if (globalSettings.broadcasterId) {
+                document.getElementById('broadcasterId').value = globalSettings.broadcasterId;
+            }
+            if (globalSettings.authenticated) {
+                showAuthStatus(true);
+            }
+        }
+
+        function showAuthStatus(isAuthenticated) {
+            const statusEl = document.getElementById('authStatus');
+            statusEl.style.display = 'block';
+            if (isAuthenticated) {
+                statusEl.className = 'status connected';
+                statusEl.textContent = 'Connected to Twitch';
+            } else {
+                statusEl.className = 'status disconnected';
+                statusEl.textContent = 'Not Connected';
+            }
+        }
+
+        document.getElementById('authButton').addEventListener('click', () => {
+            // TODO: Implement OAuth flow
+            // This would typically open a browser window for authentication
+            alert('Authentication flow will be implemented by the plugin backend.');
+        });
+
+        document.getElementById('saveButton').addEventListener('click', () => {
+            const settings = {
+                clientId: document.getElementById('clientId').value,
+                broadcasterId: document.getElementById('broadcasterId').value
+            };
+
+            websocket.send(JSON.stringify({
+                event: 'setGlobalSettings',
+                context: 'com.twitch.moderator.tools',
+                payload: settings
+            }));
+
+            alert('Settings saved! Please restart the plugin if you changed authentication settings.');
+        });
+    </script>
+</body>
+</html>

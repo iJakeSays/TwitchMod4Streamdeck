@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="144" height="144" viewBox="0 0 144 144" xmlns="http://www.w3.org/2000/svg">
+  <rect width="144" height="144" fill="#3498db"/>
+  <path d="M72 35 Q77 30 82 35 Q87 40 82 45 L72 55 L62 45 Q57 40 62 35 Q67 30 72 35" stroke="#ffffff" stroke-width="2" fill="none"/>
+  <text x="72" y="85" font-family="Arial, sans-serif" font-size="11" fill="#ffffff" text-anchor="middle" font-weight="bold">FOLLOWERS</text>
+</svg>

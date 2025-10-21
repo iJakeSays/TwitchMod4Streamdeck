@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Shoutout Settings</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: transparent;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 14px;
+            color: #d8d8d8;
+        }
+
+        .sdpi-item {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            background: #3a3a3a;
+            border: 1px solid #5a5a5a;
+            border-radius: 4px;
+            color: #d8d8d8;
+            font-size: 14px;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #9147ff;
+        }
+
+        .info-text {
+            color: #a0a0a0;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="sdpi-wrapper">
+        <div class="sdpi-item">
+            <label for="streamerUsername">Streamer Username:</label>
+            <input type="text" id="streamerUsername" placeholder="Enter Twitch username">
+            <p class="info-text">Enter the username of the streamer you want to shoutout</p>
+        </div>
+    </div>
+
+    <script>
+        const websocket = new WebSocket('ws://127.0.0.1:28196');
+        let actionContext;
+
+        websocket.onopen = () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            actionContext = urlParams.get('context');
+
+            const registerEvent = {
+                event: 'registerPropertyInspector',
+                uuid: actionContext
+            };
+            websocket.send(JSON.stringify(registerEvent));
+        };
+
+        websocket.onmessage = (evt) => {
+            const data = JSON.parse(evt.data);
+
+            if (data.event === 'didReceiveSettings') {
+                const settings = data.payload.settings || {};
+                if (settings.username) {
+                    document.getElementById('streamerUsername').value = settings.username;
+                }
+            }
+        };
+
+        document.getElementById('streamerUsername').addEventListener('change', (e) => {
+            const settings = {
+                username: e.target.value
+            };
+
+            websocket.send(JSON.stringify({
+                event: 'setSettings',
+                context: actionContext,
+                payload: settings
+            }));
+        });
+    </script>
+</body>
+</html>

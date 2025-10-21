@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="144" height="144" viewBox="0 0 144 144" xmlns="http://www.w3.org/2000/svg">
+  <rect width="144" height="144" fill="#9b59b6"/>
+  <polygon points="72,32 78,45 92,45 81,53 85,66 72,58 59,66 63,53 52,45 66,45" stroke="#ffffff" stroke-width="2" fill="none"/>
+  <text x="72" y="95" font-family="Arial, sans-serif" font-size="14" fill="#ffffff" text-anchor="middle" font-weight="bold">SUBS</text>
+</svg>

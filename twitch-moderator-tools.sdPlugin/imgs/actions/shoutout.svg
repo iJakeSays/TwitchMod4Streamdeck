@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="144" height="144" viewBox="0 0 144 144" xmlns="http://www.w3.org/2000/svg">
+  <rect width="144" height="144" fill="#9b59b6"/>
+  <polygon points="72,35 78,55 98,55 82,67 88,87 72,75 56,87 62,67 46,55 66,55" stroke="#ffffff" stroke-width="2" fill="none"/>
+  <text x="72" y="110" font-family="Arial, sans-serif" font-size="10" fill="#ffffff" text-anchor="middle" font-weight="bold">SHOUTOUT</text>
+</svg>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="144" height="144" viewBox="0 0 144 144" xmlns="http://www.w3.org/2000/svg">
+  <rect width="144" height="144" fill="#e74c3c"/>
+  <path d="M72 25 L95 35 L95 60 Q95 80 72 95 Q49 80 49 60 L49 35 Z" stroke="#ffffff" stroke-width="3" fill="none"/>
+  <text x="72" y="115" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">SHIELD</text>
+</svg>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="144" height="144" viewBox="0 0 144 144" xmlns="http://www.w3.org/2000/svg">
+  <rect width="144" height="144" fill="#e74c3c"/>
+  <circle cx="72" cy="50" r="25" stroke="#ffffff" stroke-width="3" fill="none"/>
+  <line x1="55" y1="33" x2="89" y2="67" stroke="#ffffff" stroke-width="3"/>
+  <text x="72" y="100" font-family="Arial, sans-serif" font-size="16" fill="#ffffff" text-anchor="middle" font-weight="bold">CLEAR</text>
+</svg>

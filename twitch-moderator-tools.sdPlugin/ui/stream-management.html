@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Stream Management Settings</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: transparent;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 14px;
+            color: #d8d8d8;
+        }
+
+        .sdpi-item {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            background: #3a3a3a;
+            border: 1px solid #5a5a5a;
+            border-radius: 4px;
+            color: #d8d8d8;
+            font-size: 14px;
+        }
+
+        .info-text {
+            color: #a0a0a0;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="sdpi-wrapper">
+        <div class="sdpi-item" id="gameCategorySettings">
+            <label for="gameName">Game/Category Name:</label>
+            <input type="text" id="gameName" placeholder="Enter game name (e.g., Just Chatting)">
+            <p class="info-text">Enter the exact game/category name as it appears on Twitch</p>
+        </div>
+    </div>
+
+    <script>
+        const websocket = new WebSocket('ws://127.0.0.1:28196');
+        let actionContext;
+
+        websocket.onopen = () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            actionContext = urlParams.get('context');
+
+            const registerEvent = {
+                event: 'registerPropertyInspector',
+                uuid: actionContext
+            };
+            websocket.send(JSON.stringify(registerEvent));
+        };
+
+        websocket.onmessage = (evt) => {
+            const data = JSON.parse(evt.data);
+
+            if (data.event === 'didReceiveSettings') {
+                const settings = data.payload.settings || {};
+                if (settings.gameName) {
+                    document.getElementById('gameName').value = settings.gameName;
+                }
+            }
+        };
+
+        document.getElementById('gameName').addEventListener('change', (e) => {
+            const settings = {
+                gameName: e.target.value
+            };
+
+            websocket.send(JSON.stringify({
+                event: 'setSettings',
+                context: actionContext,
+                payload: settings
+            }));
+        });
+    </script>
+</body>
+</html>

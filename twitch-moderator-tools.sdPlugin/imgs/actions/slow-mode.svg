@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="144" height="144" viewBox="0 0 144 144" xmlns="http://www.w3.org/2000/svg">
+  <rect width="144" height="144" fill="#95a5a6"/>
+  <path d="M72 30 L72 60 L90 75" stroke="#ffffff" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <circle cx="72" cy="60" r="30" stroke="#ffffff" stroke-width="3" fill="none"/>
+  <text x="72" y="110" font-family="Arial, sans-serif" font-size="14" fill="#ffffff" text-anchor="middle" font-weight="bold">SLOW</text>
+</svg>
