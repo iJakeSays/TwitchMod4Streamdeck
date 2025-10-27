@@ -26,10 +26,10 @@
     "Version": "20",
     "Debug": "enabled"
   },
-  "UUID": "com.twitch.moderator.tools",
+  "UUID": "com.twitch.moderator-tools",
   "Actions": [
     {
-      "UUID": "com.twitch.moderator.tools.chat.clear",
+      "UUID": "com.twitch.moderator-tools.chat.clear",
       "Name": "Clear Chat",
       "Icon": "imgs/actions/clear-chat",
       "Tooltip": "Clear all messages from the chat",
@@ -41,7 +41,7 @@
       "PropertyInspectorPath": "ui/chat-management.html"
     },
     {
-      "UUID": "com.twitch.moderator.tools.chat.slowmode",
+      "UUID": "com.twitch.moderator-tools.chat.slowmode",
       "Name": "Slow Mode Toggle",
       "Icon": "imgs/actions/slow-mode",
       "Tooltip": "Toggle slow mode on/off with configurable duration",
@@ -58,7 +58,7 @@
       "PropertyInspectorPath": "ui/chat-management.html"
     },
     {
-      "UUID": "com.twitch.moderator.tools.chat.emoteonly",
+      "UUID": "com.twitch.moderator-tools.chat.emoteonly",
       "Name": "Emote-Only Mode",
       "Icon": "imgs/actions/emote-only",
       "Tooltip": "Toggle emote-only mode on/off",
@@ -75,7 +75,7 @@
       "PropertyInspectorPath": "ui/chat-management.html"
     },
     {
-      "UUID": "com.twitch.moderator.tools.chat.shield",
+      "UUID": "com.twitch.moderator-tools.chat.shield",
       "Name": "Shield Mode",
       "Icon": "imgs/actions/shield-mode",
       "Tooltip": "Toggle Shield Mode on/off",
@@ -92,7 +92,7 @@
       "PropertyInspectorPath": "ui/chat-management.html"
     },
     {
-      "UUID": "com.twitch.moderator.tools.automod.approve",
+      "UUID": "com.twitch.moderator-tools.automod.approve",
       "Name": "Approve AutoMod",
       "Icon": "imgs/actions/approve-automod",
       "Tooltip": "Approve the next held AutoMod message",
@@ -104,7 +104,7 @@
       "PropertyInspectorPath": "ui/automod.html"
     },
     {
-      "UUID": "com.twitch.moderator.tools.automod.deny",
+      "UUID": "com.twitch.moderator-tools.automod.deny",
       "Name": "Deny AutoMod",
       "Icon": "imgs/actions/deny-automod",
       "Tooltip": "Deny the next held AutoMod message",
@@ -116,7 +116,7 @@
       "PropertyInspectorPath": "ui/automod.html"
     },
     {
-      "UUID": "com.twitch.moderator.tools.automod.clear",
+      "UUID": "com.twitch.moderator-tools.automod.clear",
       "Name": "Clear AutoMod Queue",
       "Icon": "imgs/actions/clear-automod",
       "Tooltip": "Clear all held AutoMod messages",
@@ -128,7 +128,7 @@
       "PropertyInspectorPath": "ui/automod.html"
     },
     {
-      "UUID": "com.twitch.moderator.tools.stream.marker",
+      "UUID": "com.twitch.moderator-tools.stream.marker",
       "Name": "Create Stream Marker",
       "Icon": "imgs/actions/stream-marker",
       "Tooltip": "Create a stream marker at the current timestamp",
@@ -140,7 +140,7 @@
       "PropertyInspectorPath": "ui/stream-management.html"
     },
     {
-      "UUID": "com.twitch.moderator.tools.stream.clip",
+      "UUID": "com.twitch.moderator-tools.stream.clip",
       "Name": "Create Clip",
       "Icon": "imgs/actions/create-clip",
       "Tooltip": "Create a clip of the current stream",
@@ -152,7 +152,7 @@
       "PropertyInspectorPath": "ui/stream-management.html"
     },
     {
-      "UUID": "com.twitch.moderator.tools.stream.category1",
+      "UUID": "com.twitch.moderator-tools.stream.category1",
       "Name": "Game Category Preset #1",
       "Icon": "imgs/actions/game-category",
       "Tooltip": "Change stream category to preset 1",
@@ -164,7 +164,7 @@
       "PropertyInspectorPath": "ui/stream-management.html"
     },
     {
-      "UUID": "com.twitch.moderator.tools.stream.category2",
+      "UUID": "com.twitch.moderator-tools.stream.category2",
       "Name": "Game Category Preset #2",
       "Icon": "imgs/actions/game-category",
       "Tooltip": "Change stream category to preset 2",
@@ -176,7 +176,7 @@
       "PropertyInspectorPath": "ui/stream-management.html"
     },
     {
-      "UUID": "com.twitch.moderator.tools.stream.category3",
+      "UUID": "com.twitch.moderator-tools.stream.category3",
       "Name": "Game Category Preset #3",
       "Icon": "imgs/actions/game-category",
       "Tooltip": "Change stream category to preset 3",
@@ -188,7 +188,7 @@
       "PropertyInspectorPath": "ui/stream-management.html"
     },
     {
-      "UUID": "com.twitch.moderator.tools.stream.category4",
+      "UUID": "com.twitch.moderator-tools.stream.category4",
       "Name": "Game Category Preset #4",
       "Icon": "imgs/actions/game-category",
       "Tooltip": "Change stream category to preset 4",
@@ -200,7 +200,7 @@
       "PropertyInspectorPath": "ui/stream-management.html"
     },
     {
-      "UUID": "com.twitch.moderator.tools.stream.category5",
+      "UUID": "com.twitch.moderator-tools.stream.category5",
       "Name": "Game Category Preset #5",
       "Icon": "imgs/actions/game-category",
       "Tooltip": "Change stream category to preset 5",
@@ -212,7 +212,7 @@
       "PropertyInspectorPath": "ui/stream-management.html"
     },
     {
-      "UUID": "com.twitch.moderator.tools.announcement.blue",
+      "UUID": "com.twitch.moderator-tools.announcement.blue",
       "Name": "Announcement - Stream Event (Blue)",
       "Icon": "imgs/actions/announcement",
       "Tooltip": "Send a blue announcement about current stream events",
@@ -224,7 +224,7 @@
       "PropertyInspectorPath": "ui/announcements.html"
     },
     {
-      "UUID": "com.twitch.moderator.tools.announcement.purple",
+      "UUID": "com.twitch.moderator-tools.announcement.purple",
       "Name": "Announcement - Rules (Purple)",
       "Icon": "imgs/actions/announcement",
       "Tooltip": "Send a purple announcement about rules",
@@ -236,7 +236,7 @@
       "PropertyInspectorPath": "ui/announcements.html"
     },
     {
-      "UUID": "com.twitch.moderator.tools.announcement.orange",
+      "UUID": "com.twitch.moderator-tools.announcement.orange",
       "Name": "Announcement - Break (Orange)",
       "Icon": "imgs/actions/announcement",
       "Tooltip": "Send an orange announcement about breaks",
@@ -248,7 +248,7 @@
       "PropertyInspectorPath": "ui/announcements.html"
     },
     {
-      "UUID": "com.twitch.moderator.tools.announcement.green",
+      "UUID": "com.twitch.moderator-tools.announcement.green",
       "Name": "Announcement - Stream Ending (Green)",
       "Icon": "imgs/actions/announcement",
       "Tooltip": "Send a green announcement about stream ending",
@@ -260,7 +260,7 @@
       "PropertyInspectorPath": "ui/announcements.html"
     },
     {
-      "UUID": "com.twitch.moderator.tools.shoutout1",
+      "UUID": "com.twitch.moderator-tools.shoutout1",
       "Name": "Shoutout Preset #1",
       "Icon": "imgs/actions/shoutout",
       "Tooltip": "Send a shoutout to preset streamer 1",
@@ -272,7 +272,7 @@
       "PropertyInspectorPath": "ui/shoutouts.html"
     },
     {
-      "UUID": "com.twitch.moderator.tools.shoutout2",
+      "UUID": "com.twitch.moderator-tools.shoutout2",
       "Name": "Shoutout Preset #2",
       "Icon": "imgs/actions/shoutout",
       "Tooltip": "Send a shoutout to preset streamer 2",
@@ -284,7 +284,7 @@
       "PropertyInspectorPath": "ui/shoutouts.html"
     },
     {
-      "UUID": "com.twitch.moderator.tools.shoutout3",
+      "UUID": "com.twitch.moderator-tools.shoutout3",
       "Name": "Shoutout Preset #3",
       "Icon": "imgs/actions/shoutout",
       "Tooltip": "Send a shoutout to preset streamer 3",
@@ -296,7 +296,7 @@
       "PropertyInspectorPath": "ui/shoutouts.html"
     },
     {
-      "UUID": "com.twitch.moderator.tools.shoutout4",
+      "UUID": "com.twitch.moderator-tools.shoutout4",
       "Name": "Shoutout Preset #4",
       "Icon": "imgs/actions/shoutout",
       "Tooltip": "Send a shoutout to preset streamer 4",
@@ -308,7 +308,7 @@
       "PropertyInspectorPath": "ui/shoutouts.html"
     },
     {
-      "UUID": "com.twitch.moderator.tools.shoutout5",
+      "UUID": "com.twitch.moderator-tools.shoutout5",
       "Name": "Shoutout Preset #5",
       "Icon": "imgs/actions/shoutout",
       "Tooltip": "Send a shoutout to preset streamer 5",
@@ -320,7 +320,7 @@
       "PropertyInspectorPath": "ui/shoutouts.html"
     },
     {
-      "UUID": "com.twitch.moderator.tools.poll.end",
+      "UUID": "com.twitch.moderator-tools.poll.end",
       "Name": "End Active Poll",
       "Icon": "imgs/actions/poll",
       "Tooltip": "End the currently active poll",
@@ -332,7 +332,7 @@
       "PropertyInspectorPath": "ui/predictions.html"
     },
     {
-      "UUID": "com.twitch.moderator.tools.prediction.cancel",
+      "UUID": "com.twitch.moderator-tools.prediction.cancel",
       "Name": "Cancel Prediction",
       "Icon": "imgs/actions/prediction",
       "Tooltip": "Cancel the active prediction and refund points",
@@ -344,7 +344,7 @@
       "PropertyInspectorPath": "ui/predictions.html"
     },
     {
-      "UUID": "com.twitch.moderator.tools.indicator.stream",
+      "UUID": "com.twitch.moderator-tools.indicator.stream",
       "Name": "Stream Status",
       "Icon": "imgs/actions/stream-status",
       "Tooltip": "Display current stream status and viewer count",
@@ -355,7 +355,7 @@
       ]
     },
     {
-      "UUID": "com.twitch.moderator.tools.indicator.followers",
+      "UUID": "com.twitch.moderator-tools.indicator.followers",
       "Name": "Follower Count",
       "Icon": "imgs/actions/follower-count",
       "Tooltip": "Display current follower count",
@@ -366,7 +366,7 @@
       ]
     },
     {
-      "UUID": "com.twitch.moderator.tools.indicator.subs",
+      "UUID": "com.twitch.moderator-tools.indicator.subs",
       "Name": "Subscriber Count",
       "Icon": "imgs/actions/sub-count",
       "Tooltip": "Display current subscriber count",
@@ -377,7 +377,7 @@
       ]
     },
     {
-      "UUID": "com.twitch.moderator.tools.indicator.chatmode",
+      "UUID": "com.twitch.moderator-tools.indicator.chatmode",
       "Name": "Chat Mode Indicator",
       "Icon": "imgs/actions/chat-mode",
       "Tooltip": "Display active chat modes",
@@ -388,7 +388,7 @@
       ]
     },
     {
-      "UUID": "com.twitch.moderator.tools.indicator.shield",
+      "UUID": "com.twitch.moderator-tools.indicator.shield",
       "Name": "Shield Mode Status",
       "Icon": "imgs/actions/shield-mode",
       "Tooltip": "Display Shield Mode status",
@@ -399,7 +399,7 @@
       ]
     },
     {
-      "UUID": "com.twitch.moderator.tools.indicator.automod",
+      "UUID": "com.twitch.moderator-tools.indicator.automod",
       "Name": "AutoMod Level",
       "Icon": "imgs/actions/approve-automod",
       "Tooltip": "Display current AutoMod level",
@@ -410,7 +410,7 @@
       ]
     },
     {
-      "UUID": "com.twitch.moderator.tools.indicator.active",
+      "UUID": "com.twitch.moderator-tools.indicator.active",
       "Name": "Active Poll/Prediction",
       "Icon": "imgs/actions/poll",
       "Tooltip": "Display active poll or prediction status",
@@ -421,7 +421,7 @@
       ]
     },
     {
-      "UUID": "com.twitch.moderator.tools.indicator.ad",
+      "UUID": "com.twitch.moderator-tools.indicator.ad",
       "Name": "Next Ad Timer",
       "Icon": "imgs/actions/stream-status",
       "Tooltip": "Display countdown to next scheduled ad",
@@ -432,7 +432,7 @@
       ]
     },
     {
-      "UUID": "com.twitch.moderator.tools.redemption.fulfill",
+      "UUID": "com.twitch.moderator-tools.redemption.fulfill",
       "Name": "Fulfill Next Redemption",
       "Icon": "imgs/actions/redemption",
       "Tooltip": "Fulfill the next unfulfilled channel point redemption",
@@ -444,7 +444,7 @@
       "PropertyInspectorPath": "ui/redemptions.html"
     },
     {
-      "UUID": "com.twitch.moderator.tools.redemption.refund",
+      "UUID": "com.twitch.moderator-tools.redemption.refund",
       "Name": "Refund Next Redemption",
       "Icon": "imgs/actions/redemption",
       "Tooltip": "Refund/cancel the next unfulfilled redemption",
@@ -456,7 +456,7 @@
       "PropertyInspectorPath": "ui/redemptions.html"
     },
     {
-      "UUID": "com.twitch.moderator.tools.redemption.completeall",
+      "UUID": "com.twitch.moderator-tools.redemption.completeall",
       "Name": "Complete All Redemptions",
       "Icon": "imgs/actions/redemption",
       "Tooltip": "Fulfill all unfulfilled channel point redemptions",

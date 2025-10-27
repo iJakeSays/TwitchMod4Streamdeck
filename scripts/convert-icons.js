@@ -7,7 +7,7 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-const svgDir = path.join(__dirname, '../twitch-moderator-tools.sdPlugin/imgs');
+const svgDir = path.join(__dirname, '../com.twitch.moderator-tools.sdPlugin/imgs');
 const sizes = {
   actions: [144, 72], // Stream Deck action icons need 144x144 and 72x72 (@2x)
   plugin: [144, 72],
@@ -79,7 +79,7 @@ if (fs.existsSync(actionsDir)) {
 }
 
 console.log('\n✅ Icon conversion complete!');
-console.log('All PNG files have been created in twitch-moderator-tools.sdPlugin/imgs/');
+console.log('All PNG files have been created in com.twitch.moderator-tools.sdPlugin/imgs/');
 
 // Delete SVG files after conversion to avoid conflicts
 console.log('\nRemoving SVG files to avoid conflicts...');

@@ -8,7 +8,7 @@
 const fs = require('fs');
 const path = require('path');
 
-const manifestPath = path.join(__dirname, '../twitch-moderator-tools.sdPlugin/manifest.json');
+const manifestPath = path.join(__dirname, '../com.twitch.moderator-tools.sdPlugin/manifest.json');
 
 console.log('Fixing manifest.json to remove PNG extensions...');
 

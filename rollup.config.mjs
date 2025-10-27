@@ -6,7 +6,7 @@ import json from "@rollup/plugin-json";
 export default {
   input: "src/plugin.ts",
   output: {
-    file: "twitch-moderator-tools.sdPlugin/bin/plugin.js",
+    file: "com.twitch.moderator-tools.sdPlugin/bin/plugin.js",
     format: "cjs",
     sourcemap: false,
     exports: "auto"
