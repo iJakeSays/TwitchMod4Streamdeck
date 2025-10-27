@@ -3,11 +3,12 @@
   "Version": "1.0.0",
   "Author": "TwitchMod4Streamdeck",
   "Description": "Complete moderation toolkit for Twitch moderators. Manage chat, AutoMod, stream settings, announcements, and more directly from your Stream Deck.",
-  "Category": "Twitch Moderator Tools",
+  "Category": "twitch-moderator-tools",
   "CategoryIcon": "imgs/category",
   "Icon": "imgs/plugin",
   "CodePath": "bin/plugin.js",
   "PropertyInspectorPath": "ui/global-settings.html",
+  "SDKVersion": 2,
   "Software": {
     "MinimumVersion": "6.4"
   },

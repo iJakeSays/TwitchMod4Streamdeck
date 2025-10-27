@@ -7,7 +7,9 @@
     "build": "rollup -c",
     "watch": "rollup -c -w",
     "dev": "rollup -c -w",
-    "clean": "rm -rf twitch-moderator-tools.sdPlugin/bin/*"
+    "clean": "rm -rf twitch-moderator-tools.sdPlugin/bin/*",
+    "convert-icons": "node scripts/convert-icons.js",
+    "prepare": "npm run build && npm run convert-icons"
   },
   "keywords": [
     "streamdeck",
