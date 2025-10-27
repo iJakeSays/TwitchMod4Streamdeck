@@ -38,9 +38,10 @@ const SCOPES = [
   'channel:read:ads'
 ];
 
-// Store PKCE verifier in memory (cleared after use)
+// Store PKCE verifier and config in memory
 let codeVerifier = null;
 let clientId = null;
+let clientSecret = null;
 
 /**
  * Generate PKCE code verifier
@@ -65,12 +66,14 @@ function loadConfig() {
   if (fs.existsSync(configPath)) {
     const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
     clientId = config.clientId;
+    clientSecret = config.clientSecret || null;
     console.log('✓ Loaded config from config.json');
     return config;
   }
 
   // Try environment variables
   clientId = process.env.TWITCH_CLIENT_ID;
+  clientSecret = process.env.TWITCH_CLIENT_SECRET || null;
 
   if (!clientId) {
     console.error('\n❌ ERROR: No Twitch Client ID found!');
@@ -162,6 +165,11 @@ app.get('/callback', async (req, res) => {
       grant_type: 'authorization_code',
       redirect_uri: REDIRECT_URI
     });
+
+    // Add client secret if provided
+    if (clientSecret) {
+      tokenParams.append('client_secret', clientSecret);
+    }
 
     console.log('→ Exchanging code for tokens...');
 
