@@ -11,7 +11,8 @@
     "convert-icons": "node scripts/convert-icons.js",
     "prepare": "npm run build && npm run convert-icons",
     "oauth-server": "node oauth-server/server.js",
-    "oauth-server:dev": "node oauth-server/server.js --dev"
+    "oauth-server:dev": "node oauth-server/server.js --dev",
+    "check-config": "node scripts/check-config.js"
   },
   "keywords": [
     "streamdeck",
