@@ -80,3 +80,24 @@ if (fs.existsSync(actionsDir)) {
 
 console.log('\n✅ Icon conversion complete!');
 console.log('All PNG files have been created in twitch-moderator-tools.sdPlugin/imgs/');
+
+// Delete SVG files after conversion to avoid conflicts
+console.log('\nRemoving SVG files to avoid conflicts...');
+
+['plugin', 'category'].forEach(name => {
+  const svgFile = path.join(svgDir, `${name}.svg`);
+  if (fs.existsSync(svgFile)) {
+    fs.unlinkSync(svgFile);
+    console.log(`  ✓ Deleted ${name}.svg`);
+  }
+});
+
+if (fs.existsSync(actionsDir)) {
+  const svgFiles = fs.readdirSync(actionsDir).filter(f => f.endsWith('.svg'));
+  svgFiles.forEach(svgFile => {
+    fs.unlinkSync(path.join(actionsDir, svgFile));
+    console.log(`  ✓ Deleted actions/${svgFile}`);
+  });
+}
+
+console.log('\n✅ All SVG files removed! Only PNG files remain.');
