@@ -1,7 +1,12 @@
 node_modules/
 dist/
-twitch-moderator-tools.sdPlugin/bin/
+com.twitch.moderator-tools.sdPlugin/bin/
 *.log
 .DS_Store
 .env
 *.tsbuildinfo
+
+# OAuth sensitive files
+oauth-server/config.json
+.oauth-tokens.json
+*.streamDeckPlugin

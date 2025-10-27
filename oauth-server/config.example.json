@@ -1,0 +1,4 @@
+{
+  "clientId": "your_twitch_client_id_here",
+  "clientSecret": "your_client_secret_here_optional"
+}
