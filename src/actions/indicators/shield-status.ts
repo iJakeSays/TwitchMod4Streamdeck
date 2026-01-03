@@ -1,6 +1,6 @@
 /**
- * Stream Status Indicator
- * Displays stream status (live/offline) and viewer count
+ * Shield Mode Status Indicator
+ * Displays whether Shield Mode is active or inactive
  */
 
 import { action, SingletonAction, WillAppearEvent, WillDisappearEvent, Action } from '@elgato/streamdeck';
@@ -11,12 +11,12 @@ interface IndicatorSettings {
   // No specific settings for this indicator
 }
 
-@action({ UUID: 'com.twitch.moderator-tools.indicator.stream' })
-export class StreamStatusIndicator extends SingletonAction<IndicatorSettings> {
+@action({ UUID: 'com.twitch.moderator-tools.indicator.shield' })
+export class ShieldStatusIndicator extends SingletonAction<IndicatorSettings> {
   private twitchClient: TwitchClient | null = null;
   private updateInterval: NodeJS.Timeout | null = null;
   private activeActions: Map<string, Action<IndicatorSettings>> = new Map();
-  private readonly UPDATE_INTERVAL = 60000; // 60 seconds
+  private readonly UPDATE_INTERVAL = 30000; // 30 seconds
 
   setTwitchClient(client: TwitchClient): void {
     this.twitchClient = client;
@@ -59,28 +59,18 @@ export class StreamStatusIndicator extends SingletonAction<IndicatorSettings> {
     }
 
     try {
-      const streamInfo = await this.twitchClient.getStreamInfo();
+      const isActive = await this.twitchClient.getShieldModeStatus();
 
-      if (streamInfo) {
-        const viewerCount = this.formatNumber(streamInfo.viewer_count || 0);
-        await action.setTitle(`LIVE\n${viewerCount}`);
-        await action.setState(1); // Use state 1 for "live"
+      if (isActive) {
+        await action.setTitle('SHIELD\nACTIVE');
+        await action.setState(1); // Active state
       } else {
-        await action.setTitle('OFFLINE');
-        await action.setState(0); // Use state 0 for "offline"
+        await action.setTitle('Shield\nOff');
+        await action.setState(0); // Inactive state
       }
     } catch (error) {
-      logger.error('Failed to update stream status', error);
+      logger.error('Failed to update shield mode status', error);
       await action.setTitle('ERROR');
     }
-  }
-
-  private formatNumber(num: number): string {
-    if (num >= 1000000) {
-      return `${(num / 1000000).toFixed(1)}M`;
-    } else if (num >= 1000) {
-      return `${(num / 1000).toFixed(1)}K`;
-    }
-    return num.toString();
   }
 }

@@ -1,6 +1,7 @@
 /**
- * Stream Status Indicator
- * Displays stream status (live/offline) and viewer count
+ * Chat Mode Indicator
+ * Displays which chat modes are currently active
+ * S = Slow Mode, E = Emote Only, F = Followers Only, R = R9K (Unique Chat)
  */
 
 import { action, SingletonAction, WillAppearEvent, WillDisappearEvent, Action } from '@elgato/streamdeck';
@@ -11,12 +12,12 @@ interface IndicatorSettings {
   // No specific settings for this indicator
 }
 
-@action({ UUID: 'com.twitch.moderator-tools.indicator.stream' })
-export class StreamStatusIndicator extends SingletonAction<IndicatorSettings> {
+@action({ UUID: 'com.twitch.moderator-tools.indicator.chatmode' })
+export class ChatModeIndicator extends SingletonAction<IndicatorSettings> {
   private twitchClient: TwitchClient | null = null;
   private updateInterval: NodeJS.Timeout | null = null;
   private activeActions: Map<string, Action<IndicatorSettings>> = new Map();
-  private readonly UPDATE_INTERVAL = 60000; // 60 seconds
+  private readonly UPDATE_INTERVAL = 30000; // 30 seconds
 
   setTwitchClient(client: TwitchClient): void {
     this.twitchClient = client;
@@ -59,28 +60,37 @@ export class StreamStatusIndicator extends SingletonAction<IndicatorSettings> {
     }
 
     try {
-      const streamInfo = await this.twitchClient.getStreamInfo();
+      const settings = await this.twitchClient.getChatSettings();
 
-      if (streamInfo) {
-        const viewerCount = this.formatNumber(streamInfo.viewer_count || 0);
-        await action.setTitle(`LIVE\n${viewerCount}`);
-        await action.setState(1); // Use state 1 for "live"
+      const modes: string[] = [];
+
+      if (settings.slow_mode) {
+        modes.push(`S:${settings.slow_mode_wait_time}s`);
+      }
+      if (settings.emote_mode) {
+        modes.push('E');
+      }
+      if (settings.follower_mode) {
+        const duration = settings.follower_mode_duration;
+        modes.push(duration ? `F:${duration}m` : 'F');
+      }
+      if (settings.unique_chat_mode) {
+        modes.push('R9K');
+      }
+      if (settings.subscriber_mode) {
+        modes.push('SUB');
+      }
+
+      if (modes.length === 0) {
+        await action.setTitle('Chat\nOpen');
       } else {
-        await action.setTitle('OFFLINE');
-        await action.setState(0); // Use state 0 for "offline"
+        // Display active modes, max 2 per line for readability
+        const displayText = modes.slice(0, 4).join(' ');
+        await action.setTitle(`CHAT\n${displayText}`);
       }
     } catch (error) {
-      logger.error('Failed to update stream status', error);
+      logger.error('Failed to update chat mode indicator', error);
       await action.setTitle('ERROR');
     }
-  }
-
-  private formatNumber(num: number): string {
-    if (num >= 1000000) {
-      return `${(num / 1000000).toFixed(1)}M`;
-    } else if (num >= 1000) {
-      return `${(num / 1000).toFixed(1)}K`;
-    }
-    return num.toString();
   }
 }

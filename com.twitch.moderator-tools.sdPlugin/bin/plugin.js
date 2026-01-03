@@ -8155,7 +8155,7 @@ let CompleteAllRedemptionsAction = (() => {
  * Displays stream status (live/offline) and viewer count
  */
 let StreamStatusIndicator = (() => {
-    let _classDecorators = [action({ UUID: 'com.twitch.moderator.tools.indicator.stream' })];
+    let _classDecorators = [action({ UUID: 'com.twitch.moderator-tools.indicator.stream' })];
     let _classDescriptor;
     let _classExtraInitializers = [];
     let _classThis;
@@ -8165,20 +8165,24 @@ let StreamStatusIndicator = (() => {
             super(...arguments);
             this.twitchClient = null;
             this.updateInterval = null;
-            this.activeActions = new Set();
+            this.activeActions = new Map();
+            this.UPDATE_INTERVAL = 60000; // 60 seconds
         }
         setTwitchClient(client) {
             this.twitchClient = client;
         }
         async onWillAppear(ev) {
-            this.activeActions.add(ev.action.id);
-            if (!this.updateInterval && this.twitchClient) {
+            this.activeActions.set(ev.action.id, ev.action);
+            // Start interval if not running
+            if (!this.updateInterval) {
                 this.startUpdating();
             }
+            // Initial update
             await this.updateStatus(ev.action);
         }
         async onWillDisappear(ev) {
             this.activeActions.delete(ev.action.id);
+            // Stop interval if no active actions
             if (this.activeActions.size === 0 && this.updateInterval) {
                 clearInterval(this.updateInterval);
                 this.updateInterval = null;
@@ -8186,21 +8190,21 @@ let StreamStatusIndicator = (() => {
         }
         startUpdating() {
             this.updateInterval = setInterval(async () => {
-                // Update all active instances
-                for (const actionId of this.activeActions) {
-                    // Note: In a real implementation, we'd need to keep references to action instances
-                    // For now, this demonstrates the pattern
+                for (const [, actionInstance] of this.activeActions) {
+                    await this.updateStatus(actionInstance);
                 }
-            }, 60000); // Update every 60 seconds
+            }, this.UPDATE_INTERVAL);
         }
         async updateStatus(action) {
-            if (!this.twitchClient)
+            if (!this.twitchClient) {
+                await action.setTitle('No Auth');
                 return;
+            }
             try {
                 const streamInfo = await this.twitchClient.getStreamInfo();
                 if (streamInfo) {
-                    const viewerCount = streamInfo.viewer_count || 0;
-                    await action.setTitle(`LIVE\n${viewerCount} viewers`);
+                    const viewerCount = this.formatNumber(streamInfo.viewer_count || 0);
+                    await action.setTitle(`LIVE\n${viewerCount}`);
                     await action.setState(1); // Use state 1 for "live"
                 }
                 else {
@@ -8213,8 +8217,676 @@ let StreamStatusIndicator = (() => {
                 await action.setTitle('ERROR');
             }
         }
+        formatNumber(num) {
+            if (num >= 1000000) {
+                return `${(num / 1000000).toFixed(1)}M`;
+            }
+            else if (num >= 1000) {
+                return `${(num / 1000).toFixed(1)}K`;
+            }
+            return num.toString();
+        }
     };
     __setFunctionName(_classThis, "StreamStatusIndicator");
+    (() => {
+        const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
+        __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+        _classThis = _classDescriptor.value;
+        if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+        __runInitializers(_classThis, _classExtraInitializers);
+    })();
+    return _classThis;
+})();
+
+/**
+ * Follower Count Indicator
+ * Displays the channel's current follower count
+ */
+let FollowerCountIndicator = (() => {
+    let _classDecorators = [action({ UUID: 'com.twitch.moderator-tools.indicator.followers' })];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = SingletonAction;
+    _classThis = class extends _classSuper {
+        constructor() {
+            super(...arguments);
+            this.twitchClient = null;
+            this.updateInterval = null;
+            this.activeActions = new Map();
+            this.UPDATE_INTERVAL = 60000; // 60 seconds
+        }
+        setTwitchClient(client) {
+            this.twitchClient = client;
+        }
+        async onWillAppear(ev) {
+            this.activeActions.set(ev.action.id, ev.action);
+            // Start interval if not running
+            if (!this.updateInterval) {
+                this.startUpdating();
+            }
+            // Initial update
+            await this.updateStatus(ev.action);
+        }
+        async onWillDisappear(ev) {
+            this.activeActions.delete(ev.action.id);
+            // Stop interval if no active actions
+            if (this.activeActions.size === 0 && this.updateInterval) {
+                clearInterval(this.updateInterval);
+                this.updateInterval = null;
+            }
+        }
+        startUpdating() {
+            this.updateInterval = setInterval(async () => {
+                for (const [, actionInstance] of this.activeActions) {
+                    await this.updateStatus(actionInstance);
+                }
+            }, this.UPDATE_INTERVAL);
+        }
+        async updateStatus(action) {
+            if (!this.twitchClient) {
+                await action.setTitle('No Auth');
+                return;
+            }
+            try {
+                const followerCount = await this.twitchClient.getFollowerCount();
+                const formattedCount = this.formatNumber(followerCount);
+                await action.setTitle(`${formattedCount}\nFollowers`);
+            }
+            catch (error) {
+                logger.error('Failed to update follower count', error);
+                await action.setTitle('ERROR');
+            }
+        }
+        formatNumber(num) {
+            if (num >= 1000000) {
+                return `${(num / 1000000).toFixed(1)}M`;
+            }
+            else if (num >= 1000) {
+                return `${(num / 1000).toFixed(1)}K`;
+            }
+            return num.toString();
+        }
+    };
+    __setFunctionName(_classThis, "FollowerCountIndicator");
+    (() => {
+        const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
+        __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+        _classThis = _classDescriptor.value;
+        if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+        __runInitializers(_classThis, _classExtraInitializers);
+    })();
+    return _classThis;
+})();
+
+/**
+ * Subscriber Count Indicator
+ * Displays the channel's current subscriber count
+ */
+let SubCountIndicator = (() => {
+    let _classDecorators = [action({ UUID: 'com.twitch.moderator-tools.indicator.subs' })];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = SingletonAction;
+    _classThis = class extends _classSuper {
+        constructor() {
+            super(...arguments);
+            this.twitchClient = null;
+            this.updateInterval = null;
+            this.activeActions = new Map();
+            this.UPDATE_INTERVAL = 60000; // 60 seconds
+        }
+        setTwitchClient(client) {
+            this.twitchClient = client;
+        }
+        async onWillAppear(ev) {
+            this.activeActions.set(ev.action.id, ev.action);
+            // Start interval if not running
+            if (!this.updateInterval) {
+                this.startUpdating();
+            }
+            // Initial update
+            await this.updateStatus(ev.action);
+        }
+        async onWillDisappear(ev) {
+            this.activeActions.delete(ev.action.id);
+            // Stop interval if no active actions
+            if (this.activeActions.size === 0 && this.updateInterval) {
+                clearInterval(this.updateInterval);
+                this.updateInterval = null;
+            }
+        }
+        startUpdating() {
+            this.updateInterval = setInterval(async () => {
+                for (const [, actionInstance] of this.activeActions) {
+                    await this.updateStatus(actionInstance);
+                }
+            }, this.UPDATE_INTERVAL);
+        }
+        async updateStatus(action) {
+            if (!this.twitchClient) {
+                await action.setTitle('No Auth');
+                return;
+            }
+            try {
+                const subCount = await this.twitchClient.getSubscriberCount();
+                const formattedCount = this.formatNumber(subCount);
+                await action.setTitle(`${formattedCount}\nSubs`);
+            }
+            catch (error) {
+                logger.error('Failed to update subscriber count', error);
+                await action.setTitle('ERROR');
+            }
+        }
+        formatNumber(num) {
+            if (num >= 1000000) {
+                return `${(num / 1000000).toFixed(1)}M`;
+            }
+            else if (num >= 1000) {
+                return `${(num / 1000).toFixed(1)}K`;
+            }
+            return num.toString();
+        }
+    };
+    __setFunctionName(_classThis, "SubCountIndicator");
+    (() => {
+        const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
+        __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+        _classThis = _classDescriptor.value;
+        if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+        __runInitializers(_classThis, _classExtraInitializers);
+    })();
+    return _classThis;
+})();
+
+/**
+ * Chat Mode Indicator
+ * Displays which chat modes are currently active
+ * S = Slow Mode, E = Emote Only, F = Followers Only, R = R9K (Unique Chat)
+ */
+let ChatModeIndicator = (() => {
+    let _classDecorators = [action({ UUID: 'com.twitch.moderator-tools.indicator.chatmode' })];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = SingletonAction;
+    _classThis = class extends _classSuper {
+        constructor() {
+            super(...arguments);
+            this.twitchClient = null;
+            this.updateInterval = null;
+            this.activeActions = new Map();
+            this.UPDATE_INTERVAL = 30000; // 30 seconds
+        }
+        setTwitchClient(client) {
+            this.twitchClient = client;
+        }
+        async onWillAppear(ev) {
+            this.activeActions.set(ev.action.id, ev.action);
+            // Start interval if not running
+            if (!this.updateInterval) {
+                this.startUpdating();
+            }
+            // Initial update
+            await this.updateStatus(ev.action);
+        }
+        async onWillDisappear(ev) {
+            this.activeActions.delete(ev.action.id);
+            // Stop interval if no active actions
+            if (this.activeActions.size === 0 && this.updateInterval) {
+                clearInterval(this.updateInterval);
+                this.updateInterval = null;
+            }
+        }
+        startUpdating() {
+            this.updateInterval = setInterval(async () => {
+                for (const [, actionInstance] of this.activeActions) {
+                    await this.updateStatus(actionInstance);
+                }
+            }, this.UPDATE_INTERVAL);
+        }
+        async updateStatus(action) {
+            if (!this.twitchClient) {
+                await action.setTitle('No Auth');
+                return;
+            }
+            try {
+                const settings = await this.twitchClient.getChatSettings();
+                const modes = [];
+                if (settings.slow_mode) {
+                    modes.push(`S:${settings.slow_mode_wait_time}s`);
+                }
+                if (settings.emote_mode) {
+                    modes.push('E');
+                }
+                if (settings.follower_mode) {
+                    const duration = settings.follower_mode_duration;
+                    modes.push(duration ? `F:${duration}m` : 'F');
+                }
+                if (settings.unique_chat_mode) {
+                    modes.push('R9K');
+                }
+                if (settings.subscriber_mode) {
+                    modes.push('SUB');
+                }
+                if (modes.length === 0) {
+                    await action.setTitle('Chat\nOpen');
+                }
+                else {
+                    // Display active modes, max 2 per line for readability
+                    const displayText = modes.slice(0, 4).join(' ');
+                    await action.setTitle(`CHAT\n${displayText}`);
+                }
+            }
+            catch (error) {
+                logger.error('Failed to update chat mode indicator', error);
+                await action.setTitle('ERROR');
+            }
+        }
+    };
+    __setFunctionName(_classThis, "ChatModeIndicator");
+    (() => {
+        const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
+        __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+        _classThis = _classDescriptor.value;
+        if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+        __runInitializers(_classThis, _classExtraInitializers);
+    })();
+    return _classThis;
+})();
+
+/**
+ * Shield Mode Status Indicator
+ * Displays whether Shield Mode is active or inactive
+ */
+let ShieldStatusIndicator = (() => {
+    let _classDecorators = [action({ UUID: 'com.twitch.moderator-tools.indicator.shield' })];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = SingletonAction;
+    _classThis = class extends _classSuper {
+        constructor() {
+            super(...arguments);
+            this.twitchClient = null;
+            this.updateInterval = null;
+            this.activeActions = new Map();
+            this.UPDATE_INTERVAL = 30000; // 30 seconds
+        }
+        setTwitchClient(client) {
+            this.twitchClient = client;
+        }
+        async onWillAppear(ev) {
+            this.activeActions.set(ev.action.id, ev.action);
+            // Start interval if not running
+            if (!this.updateInterval) {
+                this.startUpdating();
+            }
+            // Initial update
+            await this.updateStatus(ev.action);
+        }
+        async onWillDisappear(ev) {
+            this.activeActions.delete(ev.action.id);
+            // Stop interval if no active actions
+            if (this.activeActions.size === 0 && this.updateInterval) {
+                clearInterval(this.updateInterval);
+                this.updateInterval = null;
+            }
+        }
+        startUpdating() {
+            this.updateInterval = setInterval(async () => {
+                for (const [, actionInstance] of this.activeActions) {
+                    await this.updateStatus(actionInstance);
+                }
+            }, this.UPDATE_INTERVAL);
+        }
+        async updateStatus(action) {
+            if (!this.twitchClient) {
+                await action.setTitle('No Auth');
+                return;
+            }
+            try {
+                const isActive = await this.twitchClient.getShieldModeStatus();
+                if (isActive) {
+                    await action.setTitle('SHIELD\nACTIVE');
+                    await action.setState(1); // Active state
+                }
+                else {
+                    await action.setTitle('Shield\nOff');
+                    await action.setState(0); // Inactive state
+                }
+            }
+            catch (error) {
+                logger.error('Failed to update shield mode status', error);
+                await action.setTitle('ERROR');
+            }
+        }
+    };
+    __setFunctionName(_classThis, "ShieldStatusIndicator");
+    (() => {
+        const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
+        __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+        _classThis = _classDescriptor.value;
+        if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+        __runInitializers(_classThis, _classExtraInitializers);
+    })();
+    return _classThis;
+})();
+
+/**
+ * AutoMod Level Display
+ * Displays the current AutoMod level (0-4)
+ */
+let AutoModLevelIndicator = (() => {
+    let _classDecorators = [action({ UUID: 'com.twitch.moderator-tools.indicator.automod' })];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = SingletonAction;
+    _classThis = class extends _classSuper {
+        constructor() {
+            super(...arguments);
+            this.twitchClient = null;
+            this.updateInterval = null;
+            this.activeActions = new Map();
+            this.UPDATE_INTERVAL = 60000; // 60 seconds
+        }
+        setTwitchClient(client) {
+            this.twitchClient = client;
+        }
+        async onWillAppear(ev) {
+            this.activeActions.set(ev.action.id, ev.action);
+            // Start interval if not running
+            if (!this.updateInterval) {
+                this.startUpdating();
+            }
+            // Initial update
+            await this.updateStatus(ev.action);
+        }
+        async onWillDisappear(ev) {
+            this.activeActions.delete(ev.action.id);
+            // Stop interval if no active actions
+            if (this.activeActions.size === 0 && this.updateInterval) {
+                clearInterval(this.updateInterval);
+                this.updateInterval = null;
+            }
+        }
+        startUpdating() {
+            this.updateInterval = setInterval(async () => {
+                for (const [, actionInstance] of this.activeActions) {
+                    await this.updateStatus(actionInstance);
+                }
+            }, this.UPDATE_INTERVAL);
+        }
+        async updateStatus(action) {
+            if (!this.twitchClient) {
+                await action.setTitle('No Auth');
+                return;
+            }
+            try {
+                const settings = await this.twitchClient.getAutoModSettings();
+                // AutoMod overall level (0-4)
+                const level = settings.overall_level ?? 'N/A';
+                // Display level with description
+                let description = '';
+                switch (level) {
+                    case 0:
+                        description = 'Off';
+                        break;
+                    case 1:
+                        description = 'Low';
+                        break;
+                    case 2:
+                        description = 'Medium';
+                        break;
+                    case 3:
+                        description = 'High';
+                        break;
+                    case 4:
+                        description = 'Max';
+                        break;
+                    default:
+                        description = 'Custom';
+                }
+                await action.setTitle(`AutoMod\nLv ${level}\n${description}`);
+            }
+            catch (error) {
+                logger.error('Failed to update AutoMod level', error);
+                await action.setTitle('ERROR');
+            }
+        }
+    };
+    __setFunctionName(_classThis, "AutoModLevelIndicator");
+    (() => {
+        const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
+        __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+        _classThis = _classDescriptor.value;
+        if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+        __runInitializers(_classThis, _classExtraInitializers);
+    })();
+    return _classThis;
+})();
+
+/**
+ * Active Poll/Prediction Indicator
+ * Displays whether a poll or prediction is currently active
+ */
+let ActivePollPredictionIndicator = (() => {
+    let _classDecorators = [action({ UUID: 'com.twitch.moderator-tools.indicator.active' })];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = SingletonAction;
+    _classThis = class extends _classSuper {
+        constructor() {
+            super(...arguments);
+            this.twitchClient = null;
+            this.updateInterval = null;
+            this.activeActions = new Map();
+            this.UPDATE_INTERVAL = 30000; // 30 seconds
+        }
+        setTwitchClient(client) {
+            this.twitchClient = client;
+        }
+        async onWillAppear(ev) {
+            this.activeActions.set(ev.action.id, ev.action);
+            // Start interval if not running
+            if (!this.updateInterval) {
+                this.startUpdating();
+            }
+            // Initial update
+            await this.updateStatus(ev.action);
+        }
+        async onWillDisappear(ev) {
+            this.activeActions.delete(ev.action.id);
+            // Stop interval if no active actions
+            if (this.activeActions.size === 0 && this.updateInterval) {
+                clearInterval(this.updateInterval);
+                this.updateInterval = null;
+            }
+        }
+        startUpdating() {
+            this.updateInterval = setInterval(async () => {
+                for (const [, actionInstance] of this.activeActions) {
+                    await this.updateStatus(actionInstance);
+                }
+            }, this.UPDATE_INTERVAL);
+        }
+        async updateStatus(action) {
+            if (!this.twitchClient) {
+                await action.setTitle('No Auth');
+                return;
+            }
+            try {
+                // Check for active polls and predictions in parallel
+                const [polls, predictions] = await Promise.all([
+                    this.twitchClient.getPolls(),
+                    this.twitchClient.getPredictions()
+                ]);
+                // Find active poll (status: ACTIVE)
+                const activePoll = polls.find((p) => p.status === 'ACTIVE');
+                // Find active prediction (status: ACTIVE or LOCKED)
+                const activePrediction = predictions.find((p) => p.status === 'ACTIVE' || p.status === 'LOCKED');
+                if (activePoll && activePrediction) {
+                    // Both active
+                    await action.setTitle('POLL &\nPRED\nACTIVE');
+                }
+                else if (activePoll) {
+                    // Only poll active
+                    const remaining = this.getTimeRemaining(activePoll.ends_at);
+                    await action.setTitle(`POLL\n${remaining}`);
+                }
+                else if (activePrediction) {
+                    // Only prediction active
+                    const status = activePrediction.status === 'LOCKED' ? 'LOCKED' : 'ACTIVE';
+                    await action.setTitle(`PRED\n${status}`);
+                }
+                else {
+                    // None active
+                    await action.setTitle('No\nActive');
+                }
+            }
+            catch (error) {
+                logger.error('Failed to update poll/prediction status', error);
+                await action.setTitle('ERROR');
+            }
+        }
+        getTimeRemaining(endsAt) {
+            const endTime = new Date(endsAt).getTime();
+            const now = Date.now();
+            const remaining = Math.max(0, endTime - now);
+            const seconds = Math.floor(remaining / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = seconds % 60;
+            if (minutes > 0) {
+                return `${minutes}m ${remainingSeconds}s`;
+            }
+            return `${remainingSeconds}s`;
+        }
+    };
+    __setFunctionName(_classThis, "ActivePollPredictionIndicator");
+    (() => {
+        const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
+        __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
+        _classThis = _classDescriptor.value;
+        if (_metadata) Object.defineProperty(_classThis, Symbol.metadata, { enumerable: true, configurable: true, writable: true, value: _metadata });
+        __runInitializers(_classThis, _classExtraInitializers);
+    })();
+    return _classThis;
+})();
+
+/**
+ * Next Ad Timer Indicator
+ * Displays countdown to the next scheduled ad
+ */
+let NextAdIndicator = (() => {
+    let _classDecorators = [action({ UUID: 'com.twitch.moderator-tools.indicator.ad' })];
+    let _classDescriptor;
+    let _classExtraInitializers = [];
+    let _classThis;
+    let _classSuper = SingletonAction;
+    _classThis = class extends _classSuper {
+        constructor() {
+            super(...arguments);
+            this.twitchClient = null;
+            this.updateInterval = null;
+            this.activeActions = new Map();
+            this.UPDATE_INTERVAL = 30000; // 30 seconds
+            this.cachedSchedule = null;
+            this.lastCacheTime = 0;
+            this.CACHE_DURATION = 60000; // Cache schedule for 60 seconds
+        }
+        setTwitchClient(client) {
+            this.twitchClient = client;
+        }
+        async onWillAppear(ev) {
+            this.activeActions.set(ev.action.id, ev.action);
+            // Start interval if not running
+            if (!this.updateInterval) {
+                this.startUpdating();
+            }
+            // Initial update
+            await this.updateStatus(ev.action);
+        }
+        async onWillDisappear(ev) {
+            this.activeActions.delete(ev.action.id);
+            // Stop interval if no active actions
+            if (this.activeActions.size === 0 && this.updateInterval) {
+                clearInterval(this.updateInterval);
+                this.updateInterval = null;
+                this.cachedSchedule = null;
+            }
+        }
+        startUpdating() {
+            this.updateInterval = setInterval(async () => {
+                for (const [, actionInstance] of this.activeActions) {
+                    await this.updateStatus(actionInstance);
+                }
+            }, this.UPDATE_INTERVAL);
+        }
+        async updateStatus(action) {
+            if (!this.twitchClient) {
+                await action.setTitle('No Auth');
+                return;
+            }
+            try {
+                // Get ad schedule (with caching)
+                const now = Date.now();
+                if (!this.cachedSchedule || (now - this.lastCacheTime) > this.CACHE_DURATION) {
+                    this.cachedSchedule = await this.twitchClient.getAdSchedule();
+                    this.lastCacheTime = now;
+                }
+                if (!this.cachedSchedule) {
+                    await action.setTitle('No Ads\nScheduled');
+                    return;
+                }
+                const schedule = this.cachedSchedule;
+                if (schedule.next_ad_at) {
+                    const remaining = this.getTimeRemaining(schedule.next_ad_at);
+                    if (remaining === 'NOW') {
+                        await action.setTitle('AD\nNOW!');
+                    }
+                    else {
+                        await action.setTitle(`Next Ad\n${remaining}`);
+                    }
+                }
+                else if (schedule.preroll_free_time && schedule.preroll_free_time > 0) {
+                    // Show preroll-free time remaining
+                    const minutes = Math.floor(schedule.preroll_free_time / 60);
+                    await action.setTitle(`PreRoll\nFree ${minutes}m`);
+                }
+                else {
+                    await action.setTitle('Ads\nReady');
+                }
+            }
+            catch (error) {
+                logger.error('Failed to update ad schedule', error);
+                await action.setTitle('ERROR');
+            }
+        }
+        getTimeRemaining(nextAdAt) {
+            const adTime = new Date(nextAdAt).getTime();
+            const now = Date.now();
+            const remaining = adTime - now;
+            if (remaining <= 0) {
+                return 'NOW';
+            }
+            const seconds = Math.floor(remaining / 1000);
+            const minutes = Math.floor(seconds / 60);
+            const hours = Math.floor(minutes / 60);
+            if (hours > 0) {
+                const remainingMinutes = minutes % 60;
+                return `${hours}h ${remainingMinutes}m`;
+            }
+            else if (minutes > 0) {
+                const remainingSeconds = seconds % 60;
+                return `${minutes}m ${remainingSeconds}s`;
+            }
+            return `${seconds}s`;
+        }
+    };
+    __setFunctionName(_classThis, "NextAdIndicator");
     (() => {
         const _metadata = typeof Symbol === "function" && Symbol.metadata ? Object.create(_classSuper[Symbol.metadata] ?? null) : void 0;
         __esDecorate(null, _classDescriptor = { value: _classThis }, _classDecorators, { kind: "class", name: _classThis.name, metadata: _metadata }, null, _classExtraInitializers);
@@ -8321,7 +8993,14 @@ function setTwitchClientOnActions() {
         FulfillRedemptionAction,
         RefundRedemptionAction,
         CompleteAllRedemptionsAction,
-        StreamStatusIndicator
+        StreamStatusIndicator,
+        FollowerCountIndicator,
+        SubCountIndicator,
+        ChatModeIndicator,
+        ShieldStatusIndicator,
+        AutoModLevelIndicator,
+        ActivePollPredictionIndicator,
+        NextAdIndicator
     ];
     // Note: In the actual Stream Deck SDK, we'd get instances differently
     // This is a simplified version for demonstration

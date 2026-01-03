@@ -51,6 +51,13 @@ import { RefundRedemptionAction } from './actions/redemptions/refund';
 import { CompleteAllRedemptionsAction } from './actions/redemptions/complete-all';
 
 import { StreamStatusIndicator } from './actions/indicators/stream-status';
+import { FollowerCountIndicator } from './actions/indicators/follower-count';
+import { SubCountIndicator } from './actions/indicators/sub-count';
+import { ChatModeIndicator } from './actions/indicators/chat-mode';
+import { ShieldStatusIndicator } from './actions/indicators/shield-status';
+import { AutoModLevelIndicator } from './actions/indicators/automod-level';
+import { ActivePollPredictionIndicator } from './actions/indicators/active-poll-prediction';
+import { NextAdIndicator } from './actions/indicators/next-ad';
 
 // Global state
 let twitchAuth: TwitchAuth | null = null;
@@ -154,7 +161,14 @@ function setTwitchClientOnActions(): void {
     FulfillRedemptionAction,
     RefundRedemptionAction,
     CompleteAllRedemptionsAction,
-    StreamStatusIndicator
+    StreamStatusIndicator,
+    FollowerCountIndicator,
+    SubCountIndicator,
+    ChatModeIndicator,
+    ShieldStatusIndicator,
+    AutoModLevelIndicator,
+    ActivePollPredictionIndicator,
+    NextAdIndicator
   ];
 
   // Note: In the actual Stream Deck SDK, we'd get instances differently

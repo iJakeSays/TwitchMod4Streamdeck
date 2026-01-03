@@ -1,6 +1,6 @@
 /**
- * Stream Status Indicator
- * Displays stream status (live/offline) and viewer count
+ * AutoMod Level Display
+ * Displays the current AutoMod level (0-4)
  */
 
 import { action, SingletonAction, WillAppearEvent, WillDisappearEvent, Action } from '@elgato/streamdeck';
@@ -11,8 +11,8 @@ interface IndicatorSettings {
   // No specific settings for this indicator
 }
 
-@action({ UUID: 'com.twitch.moderator-tools.indicator.stream' })
-export class StreamStatusIndicator extends SingletonAction<IndicatorSettings> {
+@action({ UUID: 'com.twitch.moderator-tools.indicator.automod' })
+export class AutoModLevelIndicator extends SingletonAction<IndicatorSettings> {
   private twitchClient: TwitchClient | null = null;
   private updateInterval: NodeJS.Timeout | null = null;
   private activeActions: Map<string, Action<IndicatorSettings>> = new Map();
@@ -59,28 +59,37 @@ export class StreamStatusIndicator extends SingletonAction<IndicatorSettings> {
     }
 
     try {
-      const streamInfo = await this.twitchClient.getStreamInfo();
+      const settings = await this.twitchClient.getAutoModSettings();
 
-      if (streamInfo) {
-        const viewerCount = this.formatNumber(streamInfo.viewer_count || 0);
-        await action.setTitle(`LIVE\n${viewerCount}`);
-        await action.setState(1); // Use state 1 for "live"
-      } else {
-        await action.setTitle('OFFLINE');
-        await action.setState(0); // Use state 0 for "offline"
+      // AutoMod overall level (0-4)
+      const level = settings.overall_level ?? 'N/A';
+
+      // Display level with description
+      let description = '';
+      switch (level) {
+        case 0:
+          description = 'Off';
+          break;
+        case 1:
+          description = 'Low';
+          break;
+        case 2:
+          description = 'Medium';
+          break;
+        case 3:
+          description = 'High';
+          break;
+        case 4:
+          description = 'Max';
+          break;
+        default:
+          description = 'Custom';
       }
+
+      await action.setTitle(`AutoMod\nLv ${level}\n${description}`);
     } catch (error) {
-      logger.error('Failed to update stream status', error);
+      logger.error('Failed to update AutoMod level', error);
       await action.setTitle('ERROR');
     }
-  }
-
-  private formatNumber(num: number): string {
-    if (num >= 1000000) {
-      return `${(num / 1000000).toFixed(1)}M`;
-    } else if (num >= 1000) {
-      return `${(num / 1000).toFixed(1)}K`;
-    }
-    return num.toString();
   }
 }

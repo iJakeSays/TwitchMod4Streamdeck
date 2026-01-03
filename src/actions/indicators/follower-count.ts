@@ -1,6 +1,6 @@
 /**
- * Stream Status Indicator
- * Displays stream status (live/offline) and viewer count
+ * Follower Count Indicator
+ * Displays the channel's current follower count
  */
 
 import { action, SingletonAction, WillAppearEvent, WillDisappearEvent, Action } from '@elgato/streamdeck';
@@ -11,8 +11,8 @@ interface IndicatorSettings {
   // No specific settings for this indicator
 }
 
-@action({ UUID: 'com.twitch.moderator-tools.indicator.stream' })
-export class StreamStatusIndicator extends SingletonAction<IndicatorSettings> {
+@action({ UUID: 'com.twitch.moderator-tools.indicator.followers' })
+export class FollowerCountIndicator extends SingletonAction<IndicatorSettings> {
   private twitchClient: TwitchClient | null = null;
   private updateInterval: NodeJS.Timeout | null = null;
   private activeActions: Map<string, Action<IndicatorSettings>> = new Map();
@@ -59,18 +59,11 @@ export class StreamStatusIndicator extends SingletonAction<IndicatorSettings> {
     }
 
     try {
-      const streamInfo = await this.twitchClient.getStreamInfo();
-
-      if (streamInfo) {
-        const viewerCount = this.formatNumber(streamInfo.viewer_count || 0);
-        await action.setTitle(`LIVE\n${viewerCount}`);
-        await action.setState(1); // Use state 1 for "live"
-      } else {
-        await action.setTitle('OFFLINE');
-        await action.setState(0); // Use state 0 for "offline"
-      }
+      const followerCount = await this.twitchClient.getFollowerCount();
+      const formattedCount = this.formatNumber(followerCount);
+      await action.setTitle(`${formattedCount}\nFollowers`);
     } catch (error) {
-      logger.error('Failed to update stream status', error);
+      logger.error('Failed to update follower count', error);
       await action.setTitle('ERROR');
     }
   }
