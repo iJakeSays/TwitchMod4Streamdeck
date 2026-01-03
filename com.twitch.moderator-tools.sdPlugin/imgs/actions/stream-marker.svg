@@ -1,6 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="144" height="144" viewBox="0 0 144 144" xmlns="http://www.w3.org/2000/svg">
-  <rect width="144" height="144" fill="#9b59b6"/>
-  <path d="M72 30 L72 70 M55 60 L72 70 L89 60" stroke="#ffffff" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
-  <text x="72" y="105" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">MARKER</text>
-</svg>

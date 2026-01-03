@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="144" height="144" viewBox="0 0 144 144" xmlns="http://www.w3.org/2000/svg">
-  <rect width="144" height="144" fill="#e67e22"/>
-  <rect x="50" y="40" width="44" height="35" rx="3" stroke="#ffffff" stroke-width="3" fill="none"/>
-  <circle cx="72" cy="57" r="8" fill="#ffffff"/>
-  <text x="72" y="105" font-family="Arial, sans-serif" font-size="14" fill="#ffffff" text-anchor="middle" font-weight="bold">CLIP</text>
-</svg>

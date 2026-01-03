@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="144" height="144" viewBox="0 0 144 144" xmlns="http://www.w3.org/2000/svg">
-  <rect width="144" height="144" fill="#9147ff"/>
-  <path d="M45 35 L45 80 L60 80 L60 95 L75 80 L99 80 L99 35 Z" stroke="#ffffff" stroke-width="4" fill="none"/>
-  <line x1="62" y1="50" x2="62" y2="68" stroke="#ffffff" stroke-width="3"/>
-  <line x1="82" y1="50" x2="82" y2="68" stroke="#ffffff" stroke-width="3"/>
-  <text x="72" y="125" font-family="Arial, sans-serif" font-size="10" fill="#ffffff" text-anchor="middle" font-weight="bold">TWITCH MOD</text>
-</svg>

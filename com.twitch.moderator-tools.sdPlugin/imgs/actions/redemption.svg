@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="144" height="144" viewBox="0 0 144 144" xmlns="http://www.w3.org/2000/svg">
-  <rect width="144" height="144" fill="#f39c12"/>
-  <rect x="55" y="40" width="34" height="30" stroke="#ffffff" stroke-width="3" fill="none"/>
-  <path d="M65 40 L65 32 L79 32 L79 40" stroke="#ffffff" stroke-width="3" fill="none"/>
-  <circle cx="72" cy="55" r="5" fill="#ffffff"/>
-  <text x="72" y="100" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">REDEEM</text>
-</svg>

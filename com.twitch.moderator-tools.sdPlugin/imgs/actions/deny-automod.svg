@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="144" height="144" viewBox="0 0 144 144" xmlns="http://www.w3.org/2000/svg">
-  <rect width="144" height="144" fill="#e74c3c"/>
-  <line x1="55" y1="45" x2="89" y2="75" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>
-  <line x1="89" y1="45" x2="55" y2="75" stroke="#ffffff" stroke-width="4" stroke-linecap="round"/>
-  <text x="72" y="105" font-family="Arial, sans-serif" font-size="14" fill="#ffffff" text-anchor="middle" font-weight="bold">DENY</text>
-</svg>

@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="144" height="144" viewBox="0 0 144 144" xmlns="http://www.w3.org/2000/svg">
-  <rect width="144" height="144" fill="#34495e"/>
-  <rect x="50" y="35" width="44" height="30" rx="3" stroke="#ffffff" stroke-width="2" fill="none"/>
-  <text x="72" y="90" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">CHAT</text>
-  <text x="72" y="105" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">MODES</text>
-</svg>

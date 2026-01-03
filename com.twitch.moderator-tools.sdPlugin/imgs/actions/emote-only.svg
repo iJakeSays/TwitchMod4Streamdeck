@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="144" height="144" viewBox="0 0 144 144" xmlns="http://www.w3.org/2000/svg">
-  <rect width="144" height="144" fill="#95a5a6"/>
-  <circle cx="72" cy="50" r="25" stroke="#ffffff" stroke-width="3" fill="none"/>
-  <circle cx="62" cy="45" r="3" fill="#ffffff"/>
-  <circle cx="82" cy="45" r="3" fill="#ffffff"/>
-  <path d="M55 60 Q72 70 89 60" stroke="#ffffff" stroke-width="3" fill="none"/>
-  <text x="72" y="105" font-family="Arial, sans-serif" font-size="12" fill="#ffffff" text-anchor="middle" font-weight="bold">EMOTE</text>
-</svg>
