@@ -68,16 +68,27 @@ function generateCodeChallenge(verifier: string): string {
 async function findAvailablePort(startPort: number = 3000): Promise<number> {
   return new Promise((resolve, reject) => {
     const testServer = http.createServer();
-    testServer.listen(startPort, () => {
-      testServer.close(() => resolve(startPort));
-    });
-    testServer.on('error', () => {
-      if (startPort < 3100) {
-        resolve(findAvailablePort(startPort + 1));
+
+    testServer.once('error', (err: NodeJS.ErrnoException) => {
+      if (err.code === 'EADDRINUSE' && startPort < 3100) {
+        // Port in use, try next one
+        findAvailablePort(startPort + 1).then(resolve).catch(reject);
+      } else if (startPort >= 3100) {
+        reject(new Error('No available ports found (tried 3000-3100)'));
       } else {
-        reject(new Error('No available ports found'));
+        reject(err);
       }
     });
+
+    testServer.once('listening', () => {
+      const port = (testServer.address() as any)?.port || startPort;
+      testServer.close(() => {
+        logger.info(`Found available port: ${port}`);
+        resolve(port);
+      });
+    });
+
+    testServer.listen(startPort, '127.0.0.1');
   });
 }
 
@@ -362,11 +373,15 @@ export async function startOAuthFlow(
   server = http.createServer(handleRequest);
 
   await new Promise<void>((resolve, reject) => {
-    server!.listen(port, () => {
-      logger.info(`OAuth server started on port ${port}`);
+    server!.once('error', (err) => {
+      logger.error('Failed to start OAuth server:', err);
+      reject(err);
+    });
+
+    server!.listen(port, '127.0.0.1', () => {
+      logger.info(`OAuth server started on http://127.0.0.1:${port}`);
       resolve();
     });
-    server!.on('error', reject);
   });
 
   return { authUrl, tokenPromise };

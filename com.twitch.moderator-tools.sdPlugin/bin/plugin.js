@@ -6980,17 +6980,26 @@ function generateCodeChallenge(verifier) {
 async function findAvailablePort(startPort = 3000) {
     return new Promise((resolve, reject) => {
         const testServer = http__namespace.createServer();
-        testServer.listen(startPort, () => {
-            testServer.close(() => resolve(startPort));
-        });
-        testServer.on('error', () => {
-            if (startPort < 3100) {
-                resolve(findAvailablePort(startPort + 1));
+        testServer.once('error', (err) => {
+            if (err.code === 'EADDRINUSE' && startPort < 3100) {
+                // Port in use, try next one
+                findAvailablePort(startPort + 1).then(resolve).catch(reject);
+            }
+            else if (startPort >= 3100) {
+                reject(new Error('No available ports found (tried 3000-3100)'));
             }
             else {
-                reject(new Error('No available ports found'));
+                reject(err);
             }
         });
+        testServer.once('listening', () => {
+            const port = testServer.address()?.port || startPort;
+            testServer.close(() => {
+                logger.info(`Found available port: ${port}`);
+                resolve(port);
+            });
+        });
+        testServer.listen(startPort, '127.0.0.1');
     });
 }
 /**
@@ -7238,11 +7247,14 @@ async function startOAuthFlow(clientId) {
     // Start server
     server = http__namespace.createServer(handleRequest);
     await new Promise((resolve, reject) => {
-        server.listen(port, () => {
-            logger.info(`OAuth server started on port ${port}`);
+        server.once('error', (err) => {
+            logger.error('Failed to start OAuth server:', err);
+            reject(err);
+        });
+        server.listen(port, '127.0.0.1', () => {
+            logger.info(`OAuth server started on http://127.0.0.1:${port}`);
             resolve();
         });
-        server.on('error', reject);
     });
     return { authUrl, tokenPromise };
 }
@@ -9360,13 +9372,21 @@ function openBrowser(url) {
  * Handle messages from property inspector
  */
 streamDeck.ui.onSendToPlugin(async (event) => {
-    const { payload } = event;
+    const { payload, action } = event;
     logger.info('Received message from PI:', payload?.action);
+    const sendToPI = (data) => {
+        if (action && typeof action.sendToPropertyInspector === 'function') {
+            action.sendToPropertyInspector(data);
+        }
+        else {
+            logger.warn('Cannot send to PI - no action context');
+        }
+    };
     if (payload?.action === 'startOAuth') {
         const clientId = payload.clientId;
         if (!clientId) {
             // Send error back to PI
-            streamDeck.ui.current?.sendToPropertyInspector({
+            sendToPI({
                 action: 'oauthError',
                 error: 'Client ID is required'
             });
@@ -9376,13 +9396,15 @@ streamDeck.ui.onSendToPlugin(async (event) => {
             logger.info('Starting OAuth flow...');
             // Start OAuth server and get auth URL
             const { authUrl, tokenPromise } = await startOAuthFlow(clientId);
+            logger.info('OAuth server started, auth URL:', authUrl);
             // Notify PI that OAuth has started
-            streamDeck.ui.current?.sendToPropertyInspector({
+            sendToPI({
                 action: 'oauthStarted',
                 message: 'Opening browser for authentication...'
             });
             // Open browser to auth URL
             openBrowser(authUrl);
+            logger.info('Browser open command sent');
             // Wait for tokens
             const tokens = await tokenPromise;
             logger.info('OAuth flow completed successfully');
@@ -9391,7 +9413,7 @@ streamDeck.ui.onSendToPlugin(async (event) => {
             globalSettings.clientId = clientId;
             await streamDeck.settings.setGlobalSettings(globalSettings);
             // Notify PI of success
-            streamDeck.ui.current?.sendToPropertyInspector({
+            sendToPI({
                 action: 'oauthSuccess',
                 tokens
             });
@@ -9401,7 +9423,7 @@ streamDeck.ui.onSendToPlugin(async (event) => {
         catch (error) {
             const errorMsg = error instanceof Error ? error.message : 'OAuth failed';
             logger.error('OAuth flow failed:', errorMsg);
-            streamDeck.ui.current?.sendToPropertyInspector({
+            sendToPI({
                 action: 'oauthError',
                 error: errorMsg
             });
@@ -9409,14 +9431,14 @@ streamDeck.ui.onSendToPlugin(async (event) => {
     }
     else if (payload?.action === 'cancelOAuth') {
         stopServer();
-        streamDeck.ui.current?.sendToPropertyInspector({
+        sendToPI({
             action: 'oauthCancelled'
         });
     }
     else if (payload?.action === 'getAuthStatus') {
         // Return current auth status
         const isAuthenticated = twitchAuth?.isAuthenticated() || false;
-        streamDeck.ui.current?.sendToPropertyInspector({
+        sendToPI({
             action: 'authStatus',
             isAuthenticated,
             hasTokens: !!globalSettings.tokens

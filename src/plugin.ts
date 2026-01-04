@@ -221,15 +221,23 @@ function openBrowser(url: string): void {
  * Handle messages from property inspector
  */
 streamDeck.ui.onSendToPlugin(async (event) => {
-  const { payload } = event;
-  logger.info('Received message from PI:', payload?.action);
+  const { payload, action } = event;
+  logger.info('Received message from PI:', (payload as any)?.action);
 
-  if (payload?.action === 'startOAuth') {
-    const clientId = payload.clientId;
+  const sendToPI = (data: object) => {
+    if (action && typeof action.sendToPropertyInspector === 'function') {
+      action.sendToPropertyInspector(data);
+    } else {
+      logger.warn('Cannot send to PI - no action context');
+    }
+  };
+
+  if ((payload as any)?.action === 'startOAuth') {
+    const clientId = (payload as any).clientId;
 
     if (!clientId) {
       // Send error back to PI
-      streamDeck.ui.current?.sendToPropertyInspector({
+      sendToPI({
         action: 'oauthError',
         error: 'Client ID is required'
       });
@@ -242,14 +250,17 @@ streamDeck.ui.onSendToPlugin(async (event) => {
       // Start OAuth server and get auth URL
       const { authUrl, tokenPromise } = await startOAuthFlow(clientId);
 
+      logger.info('OAuth server started, auth URL:', authUrl);
+
       // Notify PI that OAuth has started
-      streamDeck.ui.current?.sendToPropertyInspector({
+      sendToPI({
         action: 'oauthStarted',
         message: 'Opening browser for authentication...'
       });
 
       // Open browser to auth URL
       openBrowser(authUrl);
+      logger.info('Browser open command sent');
 
       // Wait for tokens
       const tokens = await tokenPromise;
@@ -262,7 +273,7 @@ streamDeck.ui.onSendToPlugin(async (event) => {
       await streamDeck.settings.setGlobalSettings(globalSettings);
 
       // Notify PI of success
-      streamDeck.ui.current?.sendToPropertyInspector({
+      sendToPI({
         action: 'oauthSuccess',
         tokens
       });
@@ -274,20 +285,20 @@ streamDeck.ui.onSendToPlugin(async (event) => {
       const errorMsg = error instanceof Error ? error.message : 'OAuth failed';
       logger.error('OAuth flow failed:', errorMsg);
 
-      streamDeck.ui.current?.sendToPropertyInspector({
+      sendToPI({
         action: 'oauthError',
         error: errorMsg
       });
     }
-  } else if (payload?.action === 'cancelOAuth') {
+  } else if ((payload as any)?.action === 'cancelOAuth') {
     stopOAuthServer();
-    streamDeck.ui.current?.sendToPropertyInspector({
+    sendToPI({
       action: 'oauthCancelled'
     });
-  } else if (payload?.action === 'getAuthStatus') {
+  } else if ((payload as any)?.action === 'getAuthStatus') {
     // Return current auth status
     const isAuthenticated = twitchAuth?.isAuthenticated() || false;
-    streamDeck.ui.current?.sendToPropertyInspector({
+    sendToPI({
       action: 'authStatus',
       isAuthenticated,
       hasTokens: !!globalSettings.tokens
