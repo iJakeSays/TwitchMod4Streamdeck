@@ -2,18 +2,20 @@
 
 var require$$0$3 = require('events');
 var require$$1 = require('https');
-var require$$2 = require('http');
+var http$1 = require('http');
 var require$$3 = require('net');
 var require$$4 = require('tls');
 var crypto = require('crypto');
 var require$$0$2 = require('stream');
-var require$$7 = require('url');
+var url = require('url');
 var require$$0 = require('zlib');
 var require$$0$1 = require('buffer');
 var fs = require('node:fs');
 var path = require('node:path');
 var node_process = require('node:process');
 var node_os = require('node:os');
+var child_process = require('child_process');
+var os = require('os');
 
 function _interopNamespaceDefault(e) {
 	var n = Object.create(null);
@@ -32,7 +34,10 @@ function _interopNamespaceDefault(e) {
 	return Object.freeze(n);
 }
 
+var http__namespace = /*#__PURE__*/_interopNamespaceDefault(http$1);
 var crypto__namespace = /*#__PURE__*/_interopNamespaceDefault(crypto);
+var url__namespace = /*#__PURE__*/_interopNamespaceDefault(url);
+var os__namespace = /*#__PURE__*/_interopNamespaceDefault(os);
 
 function getDefaultExportFromCjs (x) {
 	return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, 'default') ? x['default'] : x;
@@ -2728,12 +2733,12 @@ var extension = { format: format$1, parse: parse$1 };
 
 const EventEmitter$1 = require$$0$3;
 const https = require$$1;
-const http = require$$2;
+const http = http$1;
 const net = require$$3;
 const tls = require$$4;
 const { randomBytes, createHash: createHash$1 } = crypto;
 const { Duplex: Duplex$2, Readable } = require$$0$2;
-const { URL: URL$1 } = require$$7;
+const { URL: URL$1 } = url;
 
 const PerMessageDeflate = permessageDeflate;
 const Receiver = receiver;
@@ -6343,13 +6348,13 @@ const logger = new Logger();
 /**
  * Generate a random code verifier for PKCE
  */
-function generateCodeVerifier() {
+function generateCodeVerifier$1() {
     return crypto__namespace.randomBytes(32).toString('base64url');
 }
 /**
  * Generate code challenge from verifier
  */
-function generateCodeChallenge(verifier) {
+function generateCodeChallenge$1(verifier) {
     return crypto__namespace
         .createHash('sha256')
         .update(verifier)
@@ -6365,8 +6370,8 @@ class TwitchAuth {
      * Get the authorization URL for the user to visit
      */
     getAuthorizationUrl() {
-        this.codeVerifier = generateCodeVerifier();
-        const codeChallenge = generateCodeChallenge(this.codeVerifier);
+        this.codeVerifier = generateCodeVerifier$1();
+        const codeChallenge = generateCodeChallenge$1(this.codeVerifier);
         const params = new URLSearchParams({
             client_id: this.config.clientId,
             redirect_uri: this.config.redirectUri,
@@ -6928,6 +6933,318 @@ class TwitchClient {
     setBroadcasterId(broadcasterId) {
         this.config.broadcasterId = broadcasterId;
     }
+}
+
+/**
+ * Embedded OAuth Server
+ * Runs within the plugin to handle OAuth callbacks without requiring
+ * a separate terminal command.
+ */
+// Required Twitch scopes
+const SCOPES = [
+    'moderator:manage:chat_messages',
+    'moderator:manage:chat_settings',
+    'moderator:manage:automod',
+    'moderator:manage:shield_mode',
+    'channel:manage:broadcast',
+    'clips:edit',
+    'moderator:read:followers',
+    'channel:read:subscriptions',
+    'channel:read:redemptions',
+    'channel:manage:redemptions',
+    'moderator:manage:announcements',
+    'moderator:manage:shoutouts',
+    'channel:manage:polls',
+    'channel:manage:predictions',
+    'channel:read:ads'
+];
+let server = null;
+let currentState = null;
+let resolveCallback = null;
+let rejectCallback = null;
+/**
+ * Generate PKCE code verifier
+ */
+function generateCodeVerifier() {
+    return crypto__namespace.randomBytes(32).toString('base64url');
+}
+/**
+ * Generate PKCE code challenge
+ */
+function generateCodeChallenge(verifier) {
+    return crypto__namespace.createHash('sha256').update(verifier).digest('base64url');
+}
+/**
+ * Find an available port
+ */
+async function findAvailablePort(startPort = 3000) {
+    return new Promise((resolve, reject) => {
+        const testServer = http__namespace.createServer();
+        testServer.listen(startPort, () => {
+            testServer.close(() => resolve(startPort));
+        });
+        testServer.on('error', () => {
+            if (startPort < 3100) {
+                resolve(findAvailablePort(startPort + 1));
+            }
+            else {
+                reject(new Error('No available ports found'));
+            }
+        });
+    });
+}
+/**
+ * Success page HTML
+ */
+function getSuccessPage() {
+    return `<!DOCTYPE html>
+<html>
+<head>
+  <title>Authorization Successful</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background: linear-gradient(135deg, #9146FF 0%, #6441a5 100%);
+      color: white;
+    }
+    .container {
+      text-align: center;
+      padding: 40px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 16px;
+      max-width: 400px;
+    }
+    h1 { margin-bottom: 16px; }
+    p { opacity: 0.9; margin-bottom: 24px; }
+    .checkmark {
+      font-size: 64px;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="checkmark">✓</div>
+    <h1>Authorization Successful!</h1>
+    <p>You can close this window and return to Stream Deck.</p>
+    <p style="font-size: 12px; opacity: 0.7;">Your Twitch account is now connected.</p>
+  </div>
+  <script>
+    // Auto-close after 3 seconds
+    setTimeout(() => window.close(), 3000);
+  </script>
+</body>
+</html>`;
+}
+/**
+ * Error page HTML
+ */
+function getErrorPage(error) {
+    return `<!DOCTYPE html>
+<html>
+<head>
+  <title>Authorization Failed</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+      color: white;
+    }
+    .container {
+      text-align: center;
+      padding: 40px;
+      background: rgba(0,0,0,0.3);
+      border-radius: 16px;
+      max-width: 400px;
+    }
+    h1 { margin-bottom: 16px; }
+    p { opacity: 0.9; }
+    .error-icon { font-size: 64px; margin-bottom: 16px; }
+    .error-msg {
+      background: rgba(0,0,0,0.2);
+      padding: 12px;
+      border-radius: 8px;
+      margin-top: 16px;
+      font-family: monospace;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="error-icon">✗</div>
+    <h1>Authorization Failed</h1>
+    <p>Something went wrong during authentication.</p>
+    <div class="error-msg">${error}</div>
+    <p style="margin-top: 24px; font-size: 12px;">Please try again from Stream Deck.</p>
+  </div>
+</body>
+</html>`;
+}
+/**
+ * Handle the OAuth callback
+ */
+async function handleCallback(req, res) {
+    const parsedUrl = url__namespace.parse(req.url || '', true);
+    const { code, error, error_description } = parsedUrl.query;
+    if (error) {
+        const errorMsg = (error_description || error);
+        logger.error('OAuth error:', errorMsg);
+        res.writeHead(200, { 'Content-Type': 'text/html' });
+        res.end(getErrorPage(errorMsg));
+        if (rejectCallback) {
+            rejectCallback(new Error(errorMsg));
+        }
+        stopServer();
+        return;
+    }
+    if (!code || !currentState) {
+        const errorMsg = 'Invalid OAuth callback';
+        res.writeHead(200, { 'Content-Type': 'text/html' });
+        res.end(getErrorPage(errorMsg));
+        if (rejectCallback) {
+            rejectCallback(new Error(errorMsg));
+        }
+        stopServer();
+        return;
+    }
+    try {
+        // Exchange code for tokens
+        const tokenParams = new URLSearchParams({
+            client_id: currentState.clientId,
+            code: code,
+            code_verifier: currentState.codeVerifier,
+            grant_type: 'authorization_code',
+            redirect_uri: `http://localhost:${currentState.port}/callback`
+        });
+        logger.info('Exchanging authorization code for tokens...');
+        const tokenResponse = await fetch('https://id.twitch.tv/oauth2/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: tokenParams.toString()
+        });
+        if (!tokenResponse.ok) {
+            const errorText = await tokenResponse.text();
+            throw new Error(`Token exchange failed: ${errorText}`);
+        }
+        const tokens = await tokenResponse.json();
+        const result = {
+            access_token: tokens.access_token,
+            refresh_token: tokens.refresh_token,
+            expires_in: tokens.expires_in,
+            token_type: tokens.token_type,
+            scope: tokens.scope || SCOPES,
+            obtained_at: Date.now()
+        };
+        logger.info('OAuth tokens obtained successfully');
+        res.writeHead(200, { 'Content-Type': 'text/html' });
+        res.end(getSuccessPage());
+        if (resolveCallback) {
+            resolveCallback(result);
+        }
+    }
+    catch (err) {
+        const errorMsg = err instanceof Error ? err.message : 'Unknown error';
+        logger.error('Token exchange failed:', errorMsg);
+        res.writeHead(200, { 'Content-Type': 'text/html' });
+        res.end(getErrorPage(errorMsg));
+        if (rejectCallback) {
+            rejectCallback(new Error(errorMsg));
+        }
+    }
+    stopServer();
+}
+/**
+ * Handle HTTP requests
+ */
+function handleRequest(req, res) {
+    const parsedUrl = url__namespace.parse(req.url || '', true);
+    if (parsedUrl.pathname === '/callback') {
+        handleCallback(req, res).catch((err) => {
+            logger.error('Callback handler error:', err);
+        });
+    }
+    else if (parsedUrl.pathname === '/health') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ status: 'ok', port: currentState?.port }));
+    }
+    else {
+        res.writeHead(404);
+        res.end('Not Found');
+    }
+}
+/**
+ * Stop the OAuth server
+ */
+function stopServer() {
+    if (server) {
+        server.close();
+        server = null;
+        currentState = null;
+        resolveCallback = null;
+        rejectCallback = null;
+        logger.info('OAuth server stopped');
+    }
+}
+/**
+ * Start OAuth flow
+ * Returns the authorization URL to open in browser and a promise that
+ * resolves with tokens when the flow completes.
+ */
+async function startOAuthFlow(clientId) {
+    // Stop any existing server
+    stopServer();
+    // Find available port
+    const port = await findAvailablePort();
+    const redirectUri = `http://localhost:${port}/callback`;
+    // Generate PKCE parameters
+    const codeVerifier = generateCodeVerifier();
+    const codeChallenge = generateCodeChallenge(codeVerifier);
+    // Store state
+    currentState = { codeVerifier, clientId, port };
+    // Build authorization URL
+    const authParams = new URLSearchParams({
+        client_id: clientId,
+        redirect_uri: redirectUri,
+        response_type: 'code',
+        scope: SCOPES.join(' '),
+        code_challenge: codeChallenge,
+        code_challenge_method: 'S256',
+        force_verify: 'true'
+    });
+    const authUrl = `https://id.twitch.tv/oauth2/authorize?${authParams.toString()}`;
+    // Create promise for token result
+    const tokenPromise = new Promise((resolve, reject) => {
+        resolveCallback = resolve;
+        rejectCallback = reject;
+        // Timeout after 5 minutes
+        setTimeout(() => {
+            if (server) {
+                reject(new Error('OAuth flow timed out'));
+                stopServer();
+            }
+        }, 5 * 60 * 1000);
+    });
+    // Start server
+    server = http__namespace.createServer(handleRequest);
+    await new Promise((resolve, reject) => {
+        server.listen(port, () => {
+            logger.info(`OAuth server started on port ${port}`);
+            resolve();
+        });
+        server.on('error', reject);
+    });
+    return { authUrl, tokenPromise };
 }
 
 /******************************************************************************
@@ -9016,6 +9333,95 @@ streamDeck.settings.onDidReceiveGlobalSettings((event) => {
     initializeTwitchClient().catch((error) => {
         logger.error('Failed to initialize Twitch client', error);
     });
+});
+/**
+ * Open URL in default browser (cross-platform)
+ */
+function openBrowser(url) {
+    const platform = os__namespace.platform();
+    let command;
+    switch (platform) {
+        case 'darwin':
+            command = `open "${url}"`;
+            break;
+        case 'win32':
+            command = `start "" "${url}"`;
+            break;
+        default:
+            command = `xdg-open "${url}"`;
+    }
+    child_process.exec(command, (error) => {
+        if (error) {
+            logger.error('Failed to open browser:', error);
+        }
+    });
+}
+/**
+ * Handle messages from property inspector
+ */
+streamDeck.ui.onSendToPlugin(async (event) => {
+    const { payload } = event;
+    logger.info('Received message from PI:', payload?.action);
+    if (payload?.action === 'startOAuth') {
+        const clientId = payload.clientId;
+        if (!clientId) {
+            // Send error back to PI
+            streamDeck.ui.current?.sendToPropertyInspector({
+                action: 'oauthError',
+                error: 'Client ID is required'
+            });
+            return;
+        }
+        try {
+            logger.info('Starting OAuth flow...');
+            // Start OAuth server and get auth URL
+            const { authUrl, tokenPromise } = await startOAuthFlow(clientId);
+            // Notify PI that OAuth has started
+            streamDeck.ui.current?.sendToPropertyInspector({
+                action: 'oauthStarted',
+                message: 'Opening browser for authentication...'
+            });
+            // Open browser to auth URL
+            openBrowser(authUrl);
+            // Wait for tokens
+            const tokens = await tokenPromise;
+            logger.info('OAuth flow completed successfully');
+            // Save tokens to global settings
+            globalSettings.tokens = tokens;
+            globalSettings.clientId = clientId;
+            await streamDeck.settings.setGlobalSettings(globalSettings);
+            // Notify PI of success
+            streamDeck.ui.current?.sendToPropertyInspector({
+                action: 'oauthSuccess',
+                tokens
+            });
+            // Re-initialize Twitch client with new tokens
+            await initializeTwitchClient();
+        }
+        catch (error) {
+            const errorMsg = error instanceof Error ? error.message : 'OAuth failed';
+            logger.error('OAuth flow failed:', errorMsg);
+            streamDeck.ui.current?.sendToPropertyInspector({
+                action: 'oauthError',
+                error: errorMsg
+            });
+        }
+    }
+    else if (payload?.action === 'cancelOAuth') {
+        stopServer();
+        streamDeck.ui.current?.sendToPropertyInspector({
+            action: 'oauthCancelled'
+        });
+    }
+    else if (payload?.action === 'getAuthStatus') {
+        // Return current auth status
+        const isAuthenticated = twitchAuth?.isAuthenticated() || false;
+        streamDeck.ui.current?.sendToPropertyInspector({
+            action: 'authStatus',
+            isAuthenticated,
+            hasTokens: !!globalSettings.tokens
+        });
+    }
 });
 /**
  * Plugin initialization

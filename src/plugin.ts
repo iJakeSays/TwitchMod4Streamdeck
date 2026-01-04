@@ -7,6 +7,9 @@ import streamDeck, { LogLevel } from '@elgato/streamdeck';
 import { TwitchAuth } from './api/auth';
 import { TwitchClient } from './api/twitch-client';
 import { logger } from './utils/logger';
+import { startOAuthFlow, stopServer as stopOAuthServer } from './oauth/embedded-server';
+import { exec } from 'child_process';
+import * as os from 'os';
 
 // Import all actions
 import { ClearChatAction } from './actions/chat/clear-chat';
@@ -187,6 +190,109 @@ streamDeck.settings.onDidReceiveGlobalSettings((event) => {
   initializeTwitchClient().catch((error) => {
     logger.error('Failed to initialize Twitch client', error);
   });
+});
+
+/**
+ * Open URL in default browser (cross-platform)
+ */
+function openBrowser(url: string): void {
+  const platform = os.platform();
+  let command: string;
+
+  switch (platform) {
+    case 'darwin':
+      command = `open "${url}"`;
+      break;
+    case 'win32':
+      command = `start "" "${url}"`;
+      break;
+    default:
+      command = `xdg-open "${url}"`;
+  }
+
+  exec(command, (error) => {
+    if (error) {
+      logger.error('Failed to open browser:', error);
+    }
+  });
+}
+
+/**
+ * Handle messages from property inspector
+ */
+streamDeck.ui.onSendToPlugin(async (event) => {
+  const { payload } = event;
+  logger.info('Received message from PI:', payload?.action);
+
+  if (payload?.action === 'startOAuth') {
+    const clientId = payload.clientId;
+
+    if (!clientId) {
+      // Send error back to PI
+      streamDeck.ui.current?.sendToPropertyInspector({
+        action: 'oauthError',
+        error: 'Client ID is required'
+      });
+      return;
+    }
+
+    try {
+      logger.info('Starting OAuth flow...');
+
+      // Start OAuth server and get auth URL
+      const { authUrl, tokenPromise } = await startOAuthFlow(clientId);
+
+      // Notify PI that OAuth has started
+      streamDeck.ui.current?.sendToPropertyInspector({
+        action: 'oauthStarted',
+        message: 'Opening browser for authentication...'
+      });
+
+      // Open browser to auth URL
+      openBrowser(authUrl);
+
+      // Wait for tokens
+      const tokens = await tokenPromise;
+
+      logger.info('OAuth flow completed successfully');
+
+      // Save tokens to global settings
+      globalSettings.tokens = tokens;
+      globalSettings.clientId = clientId;
+      await streamDeck.settings.setGlobalSettings(globalSettings);
+
+      // Notify PI of success
+      streamDeck.ui.current?.sendToPropertyInspector({
+        action: 'oauthSuccess',
+        tokens
+      });
+
+      // Re-initialize Twitch client with new tokens
+      await initializeTwitchClient();
+
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : 'OAuth failed';
+      logger.error('OAuth flow failed:', errorMsg);
+
+      streamDeck.ui.current?.sendToPropertyInspector({
+        action: 'oauthError',
+        error: errorMsg
+      });
+    }
+  } else if (payload?.action === 'cancelOAuth') {
+    stopOAuthServer();
+    streamDeck.ui.current?.sendToPropertyInspector({
+      action: 'oauthCancelled'
+    });
+  } else if (payload?.action === 'getAuthStatus') {
+    // Return current auth status
+    const isAuthenticated = twitchAuth?.isAuthenticated() || false;
+    streamDeck.ui.current?.sendToPropertyInspector({
+      action: 'authStatus',
+      isAuthenticated,
+      hasTokens: !!globalSettings.tokens
+    });
+  }
 });
 
 /**
