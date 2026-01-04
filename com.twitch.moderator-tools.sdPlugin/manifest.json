@@ -1,6 +1,6 @@
 {
 	"Name": "com.twitch.moderator-tools",
-	"Version": "1.0.0.0",
+	"Version": "1.0.1.0",
 	"Author": "TwitchMod4Streamdeck",
 	"Description": "Complete moderation toolkit for Twitch moderators. Manage chat, AutoMod, stream settings, announcements, and more directly from your Stream Deck.",
 	"Category": "com.twitch.moderator-tools",
