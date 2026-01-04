@@ -35,6 +35,7 @@
             border-radius: 4px;
             color: #d8d8d8;
             font-size: 14px;
+            box-sizing: border-box;
         }
 
         input[type="text"]:focus {
@@ -90,117 +91,283 @@
             margin-top: 5px;
         }
 
+        .info-text a {
+            color: #9147ff;
+        }
+
         h3 {
             margin-top: 30px;
             margin-bottom: 15px;
             color: #ffffff;
             font-size: 16px;
         }
+
+        h3:first-child {
+            margin-top: 0;
+        }
+
+        .section {
+            padding: 15px;
+            background: #2a2a2a;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
     <div class="sdpi-wrapper">
-        <div class="sdpi-item">
-            <h3>Authentication</h3>
-            <button id="authButton">Authenticate with Twitch</button>
-            <div id="authStatus" class="status disconnected" style="display: none;">
-                Not Connected
+        <div class="section">
+            <h3>1. Client Configuration</h3>
+            <div class="sdpi-item">
+                <label for="clientId">Twitch Client ID:</label>
+                <input type="text" id="clientId" placeholder="Your Twitch Application Client ID">
+                <p class="info-text">Create a Twitch application at <a href="https://dev.twitch.tv/console/apps" target="_blank">dev.twitch.tv/console/apps</a></p>
+                <p class="info-text">Set OAuth Redirect URL to: <code>http://localhost:3000/callback</code></p>
             </div>
-            <p class="info-text">Click to authenticate with your Twitch account. You'll need moderator permissions for the channel you want to manage.</p>
+
+            <div class="sdpi-item">
+                <label for="clientSecret">Client Secret (optional):</label>
+                <input type="text" id="clientSecret" placeholder="Your Twitch Application Client Secret">
+                <p class="info-text">Optional - only needed if your app requires it</p>
+            </div>
         </div>
 
-        <div class="sdpi-item">
-            <h3>Channel Settings</h3>
-            <label for="broadcasterId">Broadcaster Channel Username:</label>
-            <input type="text" id="broadcasterId" placeholder="Enter channel username">
-            <p class="info-text">Enter the Twitch username of the channel you're moderating.</p>
+        <div class="section">
+            <h3>2. Channel Settings</h3>
+            <div class="sdpi-item">
+                <label for="broadcasterUsername">Broadcaster Channel Username:</label>
+                <input type="text" id="broadcasterUsername" placeholder="Enter channel username">
+                <p class="info-text">Enter the Twitch username of the channel you're moderating.</p>
+            </div>
         </div>
 
-        <div class="sdpi-item">
-            <h3>Client Configuration</h3>
-            <label for="clientId">Twitch Client ID:</label>
-            <input type="text" id="clientId" placeholder="Your Twitch Application Client ID">
-            <p class="info-text">Create a Twitch application at <a href="https://dev.twitch.tv/console/apps" target="_blank" style="color: #9147ff;">dev.twitch.tv/console/apps</a></p>
-        </div>
-
-        <div class="sdpi-item">
-            <button id="saveButton">Save Settings</button>
+        <div class="section">
+            <h3>3. Authentication</h3>
+            <div class="sdpi-item">
+                <button id="authButton">Authenticate with Twitch</button>
+                <div id="authStatus" class="status disconnected">
+                    Not Connected
+                </div>
+                <p class="info-text">Click to authenticate with your Twitch account. Make sure the OAuth Server is running first!</p>
+                <p class="info-text">Run: <code>npm run oauth-server</code> in the project directory</p>
+            </div>
         </div>
     </div>
 
     <script>
-        // Stream Deck SDK connection
-        const websocket = new WebSocket('ws://127.0.0.1:28196');
+        // Get connection info from URL parameters (passed by Stream Deck)
+        const urlParams = new URLSearchParams(window.location.search);
+        const port = urlParams.get('port') || '28196';
+        const uuid = urlParams.get('propertyInspectorUUID') || urlParams.get('uuid');
+        const registerEvent = urlParams.get('registerEvent') || 'registerPropertyInspector';
+        const actionInfo = urlParams.get('actionInfo');
 
+        let websocket;
         let globalSettings = {};
 
-        websocket.onopen = () => {
-            const registerEvent = {
-                event: 'registerPropertyInspector',
-                uuid: 'com.twitch.moderator.tools'
+        // Connect to Stream Deck
+        function connectToStreamDeck() {
+            websocket = new WebSocket(`ws://127.0.0.1:${port}`);
+
+            websocket.onopen = () => {
+                console.log('Connected to Stream Deck');
+
+                // Register the property inspector
+                websocket.send(JSON.stringify({
+                    event: registerEvent,
+                    uuid: uuid
+                }));
+
+                // Request global settings
+                websocket.send(JSON.stringify({
+                    event: 'getGlobalSettings',
+                    context: uuid
+                }));
             };
-            websocket.send(JSON.stringify(registerEvent));
 
-            // Request global settings
-            websocket.send(JSON.stringify({
-                event: 'getGlobalSettings',
-                context: 'com.twitch.moderator.tools'
-            }));
-        };
+            websocket.onmessage = (evt) => {
+                const data = JSON.parse(evt.data);
+                console.log('Received:', data);
 
-        websocket.onmessage = (evt) => {
-            const data = JSON.parse(evt.data);
+                if (data.event === 'didReceiveGlobalSettings') {
+                    globalSettings = data.payload.settings || {};
+                    loadSettings();
+                }
+            };
 
-            if (data.event === 'didReceiveGlobalSettings') {
-                globalSettings = data.payload.settings || {};
-                loadSettings();
-            }
-        };
+            websocket.onerror = (error) => {
+                console.error('WebSocket error:', error);
+            };
+
+            websocket.onclose = () => {
+                console.log('WebSocket closed');
+            };
+        }
 
         function loadSettings() {
             if (globalSettings.clientId) {
                 document.getElementById('clientId').value = globalSettings.clientId;
             }
-            if (globalSettings.broadcasterId) {
-                document.getElementById('broadcasterId').value = globalSettings.broadcasterId;
+            if (globalSettings.clientSecret) {
+                document.getElementById('clientSecret').value = globalSettings.clientSecret;
             }
-            if (globalSettings.authenticated) {
-                showAuthStatus(true);
+            if (globalSettings.broadcasterUsername) {
+                document.getElementById('broadcasterUsername').value = globalSettings.broadcasterUsername;
             }
+
+            updateAuthStatus();
         }
 
-        function showAuthStatus(isAuthenticated) {
+        function updateAuthStatus() {
             const statusEl = document.getElementById('authStatus');
-            statusEl.style.display = 'block';
-            if (isAuthenticated) {
+            if (globalSettings.tokens && globalSettings.tokens.access_token) {
                 statusEl.className = 'status connected';
-                statusEl.textContent = 'Connected to Twitch';
+                statusEl.textContent = 'Connected to Twitch ✓';
             } else {
                 statusEl.className = 'status disconnected';
                 statusEl.textContent = 'Not Connected';
             }
         }
 
-        document.getElementById('authButton').addEventListener('click', () => {
-            // TODO: Implement OAuth flow
-            // This would typically open a browser window for authentication
-            alert('Authentication flow will be implemented by the plugin backend.');
-        });
-
-        document.getElementById('saveButton').addEventListener('click', () => {
-            const settings = {
-                clientId: document.getElementById('clientId').value,
-                broadcasterId: document.getElementById('broadcasterId').value
+        function saveSettings() {
+            const newSettings = {
+                ...globalSettings,
+                clientId: document.getElementById('clientId').value.trim(),
+                clientSecret: document.getElementById('clientSecret').value.trim(),
+                broadcasterUsername: document.getElementById('broadcasterUsername').value.trim()
             };
+
+            globalSettings = newSettings;
 
             websocket.send(JSON.stringify({
                 event: 'setGlobalSettings',
-                context: 'com.twitch.moderator.tools',
-                payload: settings
+                context: uuid,
+                payload: newSettings
             }));
+        }
 
-            alert('Settings saved! Please restart the plugin if you changed authentication settings.');
+        // Auto-save on input change
+        document.getElementById('clientId').addEventListener('change', saveSettings);
+        document.getElementById('clientSecret').addEventListener('change', saveSettings);
+        document.getElementById('broadcasterUsername').addEventListener('change', saveSettings);
+
+        // Handle authentication
+        document.getElementById('authButton').addEventListener('click', async () => {
+            const clientId = document.getElementById('clientId').value.trim();
+            const clientSecret = document.getElementById('clientSecret').value.trim();
+
+            if (!clientId) {
+                alert('Please enter your Twitch Client ID first.');
+                return;
+            }
+
+            // Save settings before auth
+            saveSettings();
+
+            // Build auth URL
+            const scopes = [
+                'moderator:manage:chat_messages',
+                'moderator:manage:chat_settings',
+                'moderator:manage:automod',
+                'moderator:manage:shield_mode',
+                'channel:manage:broadcast',
+                'clips:edit',
+                'moderator:read:followers',
+                'channel:read:subscriptions',
+                'channel:read:redemptions',
+                'channel:manage:redemptions',
+                'moderator:manage:announcements',
+                'moderator:manage:shoutouts',
+                'channel:manage:polls',
+                'channel:manage:predictions',
+                'channel:read:ads'
+            ];
+
+            // Generate PKCE code verifier and challenge
+            const codeVerifier = generateCodeVerifier();
+            const codeChallenge = await generateCodeChallenge(codeVerifier);
+
+            // Store code verifier in settings for later use
+            globalSettings.codeVerifier = codeVerifier;
+            saveSettings();
+
+            const authParams = new URLSearchParams({
+                client_id: clientId,
+                redirect_uri: 'http://localhost:3000/callback',
+                response_type: 'code',
+                scope: scopes.join(' '),
+                code_challenge: codeChallenge,
+                code_challenge_method: 'S256',
+                force_verify: 'true'
+            });
+
+            const authUrl = `https://id.twitch.tv/oauth2/authorize?${authParams.toString()}`;
+
+            // Open auth URL in browser
+            window.open(authUrl, '_blank');
+
+            // Show instructions
+            document.getElementById('authStatus').className = 'status info';
+            document.getElementById('authStatus').textContent = 'Complete authentication in browser, then click "Check Auth Status"';
+
+            // Add a check button if not exists
+            if (!document.getElementById('checkAuthButton')) {
+                const checkButton = document.createElement('button');
+                checkButton.id = 'checkAuthButton';
+                checkButton.textContent = 'Check Auth Status';
+                checkButton.style.marginTop = '10px';
+                checkButton.style.marginLeft = '10px';
+                checkButton.addEventListener('click', checkAuthStatus);
+                document.getElementById('authButton').parentNode.insertBefore(checkButton, document.getElementById('authStatus'));
+            }
         });
+
+        async function checkAuthStatus() {
+            try {
+                // Try to fetch tokens from the OAuth server
+                const response = await fetch('http://localhost:3000/tokens');
+                if (response.ok) {
+                    const tokens = await response.json();
+                    if (tokens && tokens.access_token) {
+                        // Save tokens to global settings
+                        globalSettings.tokens = tokens;
+                        saveSettings();
+                        updateAuthStatus();
+                        alert('Authentication successful!');
+                    } else {
+                        alert('No tokens found. Please complete the authentication in the browser.');
+                    }
+                } else {
+                    alert('Could not connect to OAuth server. Make sure it\'s running with: npm run oauth-server');
+                }
+            } catch (error) {
+                alert('Could not connect to OAuth server. Make sure it\'s running with: npm run oauth-server');
+            }
+        }
+
+        // PKCE helpers
+        function generateCodeVerifier() {
+            const array = new Uint8Array(32);
+            crypto.getRandomValues(array);
+            return base64URLEncode(array);
+        }
+
+        async function generateCodeChallenge(verifier) {
+            const encoder = new TextEncoder();
+            const data = encoder.encode(verifier);
+            const digest = await crypto.subtle.digest('SHA-256', data);
+            return base64URLEncode(new Uint8Array(digest));
+        }
+
+        function base64URLEncode(buffer) {
+            return btoa(String.fromCharCode(...buffer))
+                .replace(/\+/g, '-')
+                .replace(/\//g, '_')
+                .replace(/=/g, '');
+        }
+
+        // Connect when page loads
+        connectToStreamDeck();
     </script>
 </body>
 </html>

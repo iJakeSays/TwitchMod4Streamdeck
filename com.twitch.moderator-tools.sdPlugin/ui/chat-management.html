@@ -55,30 +55,48 @@
     </div>
 
     <script>
-        const websocket = new WebSocket('ws://127.0.0.1:28196');
+        // Get connection info from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const port = urlParams.get('port') || '28196';
+        const uuid = urlParams.get('propertyInspectorUUID') || urlParams.get('uuid');
+        const registerEvent = urlParams.get('registerEvent') || 'registerPropertyInspector';
+        const actionInfoStr = urlParams.get('actionInfo');
+        const actionInfo = actionInfoStr ? JSON.parse(actionInfoStr) : null;
+
+        let websocket;
         let actionContext;
 
-        websocket.onopen = () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            actionContext = urlParams.get('context');
+        function connectToStreamDeck() {
+            websocket = new WebSocket(`ws://127.0.0.1:${port}`);
 
-            const registerEvent = {
-                event: 'registerPropertyInspector',
-                uuid: actionContext
-            };
-            websocket.send(JSON.stringify(registerEvent));
-        };
+            websocket.onopen = () => {
+                actionContext = uuid;
 
-        websocket.onmessage = (evt) => {
-            const data = JSON.parse(evt.data);
+                websocket.send(JSON.stringify({
+                    event: registerEvent,
+                    uuid: uuid
+                }));
 
-            if (data.event === 'didReceiveSettings') {
-                const settings = data.payload.settings || {};
-                if (settings.slowModeDuration) {
-                    document.getElementById('slowModeDuration').value = settings.slowModeDuration;
+                // Request settings for this action
+                if (actionInfo && actionInfo.action) {
+                    websocket.send(JSON.stringify({
+                        event: 'getSettings',
+                        context: uuid
+                    }));
                 }
-            }
-        };
+            };
+
+            websocket.onmessage = (evt) => {
+                const data = JSON.parse(evt.data);
+
+                if (data.event === 'didReceiveSettings') {
+                    const settings = data.payload.settings || {};
+                    if (settings.slowModeDuration) {
+                        document.getElementById('slowModeDuration').value = settings.slowModeDuration;
+                    }
+                }
+            };
+        }
 
         document.getElementById('slowModeDuration').addEventListener('change', (e) => {
             const settings = {
@@ -91,6 +109,8 @@
                 payload: settings
             }));
         });
+
+        connectToStreamDeck();
     </script>
 </body>
 </html>

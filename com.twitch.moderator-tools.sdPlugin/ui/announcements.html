@@ -34,6 +34,7 @@
             font-size: 14px;
             font-family: inherit;
             resize: vertical;
+            box-sizing: border-box;
         }
 
         textarea:focus {
@@ -46,54 +47,92 @@
             font-size: 12px;
             margin-top: 5px;
         }
+
+        .color-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        .color-blue { background: #3b82f6; }
+        .color-purple { background: #8b5cf6; }
+        .color-orange { background: #f97316; }
+        .color-green { background: #22c55e; }
     </style>
 </head>
 <body>
     <div class="sdpi-wrapper">
         <div class="sdpi-item">
-            <label for="announcementText">Announcement Message:</label>
+            <label for="announcementText">
+                <span class="color-indicator" id="colorIndicator"></span>
+                Announcement Message:
+            </label>
             <textarea id="announcementText" placeholder="Enter your announcement message"></textarea>
             <p class="info-text">This message will be sent as an announcement in chat when you press the button</p>
         </div>
     </div>
 
     <script>
-        const websocket = new WebSocket('ws://127.0.0.1:28196');
+        // Get connection info from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const port = urlParams.get('port') || '28196';
+        const uuid = urlParams.get('propertyInspectorUUID') || urlParams.get('uuid');
+        const registerEvent = urlParams.get('registerEvent') || 'registerPropertyInspector';
+        const actionInfoStr = urlParams.get('actionInfo');
+        const actionInfo = actionInfoStr ? JSON.parse(actionInfoStr) : null;
+
+        let websocket;
         let actionContext;
 
-        websocket.onopen = () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            actionContext = urlParams.get('context');
-
-            const registerEvent = {
-                event: 'registerPropertyInspector',
-                uuid: actionContext
-            };
-            websocket.send(JSON.stringify(registerEvent));
+        const colors = {
+            'com.twitch.moderator-tools.announcement.blue': 'color-blue',
+            'com.twitch.moderator-tools.announcement.purple': 'color-purple',
+            'com.twitch.moderator-tools.announcement.orange': 'color-orange',
+            'com.twitch.moderator-tools.announcement.green': 'color-green'
         };
 
-        websocket.onmessage = (evt) => {
-            const data = JSON.parse(evt.data);
+        function connectToStreamDeck() {
+            websocket = new WebSocket(`ws://127.0.0.1:${port}`);
 
-            if (data.event === 'didReceiveSettings') {
-                const settings = data.payload.settings || {};
-                if (settings.message) {
-                    document.getElementById('announcementText').value = settings.message;
+            websocket.onopen = () => {
+                actionContext = uuid;
+
+                websocket.send(JSON.stringify({
+                    event: registerEvent,
+                    uuid: uuid
+                }));
+
+                // Set color indicator based on action type
+                if (actionInfo && actionInfo.action) {
+                    const colorClass = colors[actionInfo.action] || 'color-blue';
+                    document.getElementById('colorIndicator').className = 'color-indicator ' + colorClass;
                 }
-            }
-        };
+            };
+
+            websocket.onmessage = (evt) => {
+                const data = JSON.parse(evt.data);
+
+                if (data.event === 'didReceiveSettings') {
+                    const settings = data.payload.settings || {};
+                    if (settings.message) {
+                        document.getElementById('announcementText').value = settings.message;
+                    }
+                }
+            };
+        }
 
         document.getElementById('announcementText').addEventListener('change', (e) => {
-            const settings = {
-                message: e.target.value
-            };
-
             websocket.send(JSON.stringify({
                 event: 'setSettings',
                 context: actionContext,
-                payload: settings
+                payload: { message: e.target.value }
             }));
         });
+
+        connectToStreamDeck();
     </script>
 </body>
 </html>

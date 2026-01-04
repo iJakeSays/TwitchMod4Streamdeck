@@ -31,6 +31,7 @@
             border-radius: 4px;
             color: #d8d8d8;
             font-size: 14px;
+            box-sizing: border-box;
         }
 
         input[type="text"]:focus {
@@ -55,42 +56,48 @@
     </div>
 
     <script>
-        const websocket = new WebSocket('ws://127.0.0.1:28196');
+        // Get connection info from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const port = urlParams.get('port') || '28196';
+        const uuid = urlParams.get('propertyInspectorUUID') || urlParams.get('uuid');
+        const registerEvent = urlParams.get('registerEvent') || 'registerPropertyInspector';
+
+        let websocket;
         let actionContext;
 
-        websocket.onopen = () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            actionContext = urlParams.get('context');
+        function connectToStreamDeck() {
+            websocket = new WebSocket(`ws://127.0.0.1:${port}`);
 
-            const registerEvent = {
-                event: 'registerPropertyInspector',
-                uuid: actionContext
+            websocket.onopen = () => {
+                actionContext = uuid;
+
+                websocket.send(JSON.stringify({
+                    event: registerEvent,
+                    uuid: uuid
+                }));
             };
-            websocket.send(JSON.stringify(registerEvent));
-        };
 
-        websocket.onmessage = (evt) => {
-            const data = JSON.parse(evt.data);
+            websocket.onmessage = (evt) => {
+                const data = JSON.parse(evt.data);
 
-            if (data.event === 'didReceiveSettings') {
-                const settings = data.payload.settings || {};
-                if (settings.username) {
-                    document.getElementById('streamerUsername').value = settings.username;
+                if (data.event === 'didReceiveSettings') {
+                    const settings = data.payload.settings || {};
+                    if (settings.username) {
+                        document.getElementById('streamerUsername').value = settings.username;
+                    }
                 }
-            }
-        };
+            };
+        }
 
         document.getElementById('streamerUsername').addEventListener('change', (e) => {
-            const settings = {
-                username: e.target.value
-            };
-
             websocket.send(JSON.stringify({
                 event: 'setSettings',
                 context: actionContext,
-                payload: settings
+                payload: { username: e.target.value.trim() }
             }));
         });
+
+        connectToStreamDeck();
     </script>
 </body>
 </html>

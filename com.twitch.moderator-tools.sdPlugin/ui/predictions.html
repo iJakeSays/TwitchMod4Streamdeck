@@ -15,13 +15,37 @@
 
         .info-text {
             color: #a0a0a0;
-            font-size: 13px;
+            font-size: 12px;
         }
     </style>
 </head>
 <body>
     <div class="sdpi-wrapper">
-        <p class="info-text">No configuration needed. This action will end/cancel active polls or predictions.</p>
+        <p class="info-text">No additional configuration needed.</p>
+        <p class="info-text">Press the button to end the active poll or cancel the current prediction.</p>
     </div>
+
+    <script>
+        // Get connection info from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const port = urlParams.get('port') || '28196';
+        const uuid = urlParams.get('propertyInspectorUUID') || urlParams.get('uuid');
+        const registerEvent = urlParams.get('registerEvent') || 'registerPropertyInspector';
+
+        let websocket;
+
+        function connectToStreamDeck() {
+            websocket = new WebSocket(`ws://127.0.0.1:${port}`);
+
+            websocket.onopen = () => {
+                websocket.send(JSON.stringify({
+                    event: registerEvent,
+                    uuid: uuid
+                }));
+            };
+        }
+
+        connectToStreamDeck();
+    </script>
 </body>
 </html>

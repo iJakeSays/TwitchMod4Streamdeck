@@ -13,15 +13,105 @@
             color: #d8d8d8;
         }
 
+        .sdpi-item {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        select {
+            width: 100%;
+            padding: 8px;
+            background: #3a3a3a;
+            border: 1px solid #5a5a5a;
+            border-radius: 4px;
+            color: #d8d8d8;
+            font-size: 14px;
+        }
+
+        select:focus {
+            outline: none;
+            border-color: #9147ff;
+        }
+
         .info-text {
             color: #a0a0a0;
-            font-size: 13px;
+            font-size: 12px;
+            margin-top: 5px;
         }
     </style>
 </head>
 <body>
     <div class="sdpi-wrapper">
-        <p class="info-text">No configuration needed. This action will approve/deny the next held AutoMod message.</p>
+        <div class="sdpi-item" id="clearQueueSettings" style="display: none;">
+            <label for="clearAction">Clear Queue Action:</label>
+            <select id="clearAction">
+                <option value="ALLOW">Approve All Messages</option>
+                <option value="DENY">Deny All Messages</option>
+            </select>
+            <p class="info-text">What to do with all held AutoMod messages when clearing the queue.</p>
+        </div>
+
+        <div class="sdpi-item" id="noSettings">
+            <p class="info-text">No additional configuration needed. This action will approve/deny the next held AutoMod message.</p>
+        </div>
     </div>
+
+    <script>
+        // Get connection info from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const port = urlParams.get('port') || '28196';
+        const uuid = urlParams.get('propertyInspectorUUID') || urlParams.get('uuid');
+        const registerEvent = urlParams.get('registerEvent') || 'registerPropertyInspector';
+        const actionInfoStr = urlParams.get('actionInfo');
+        const actionInfo = actionInfoStr ? JSON.parse(actionInfoStr) : null;
+
+        let websocket;
+        let actionContext;
+
+        function connectToStreamDeck() {
+            websocket = new WebSocket(`ws://127.0.0.1:${port}`);
+
+            websocket.onopen = () => {
+                actionContext = uuid;
+
+                websocket.send(JSON.stringify({
+                    event: registerEvent,
+                    uuid: uuid
+                }));
+
+                // Show clear queue settings only for clear action
+                if (actionInfo && actionInfo.action && actionInfo.action.includes('clear')) {
+                    document.getElementById('clearQueueSettings').style.display = 'block';
+                    document.getElementById('noSettings').style.display = 'none';
+                }
+            };
+
+            websocket.onmessage = (evt) => {
+                const data = JSON.parse(evt.data);
+
+                if (data.event === 'didReceiveSettings') {
+                    const settings = data.payload.settings || {};
+                    if (settings.clearAction) {
+                        document.getElementById('clearAction').value = settings.clearAction;
+                    }
+                }
+            };
+        }
+
+        document.getElementById('clearAction').addEventListener('change', (e) => {
+            websocket.send(JSON.stringify({
+                event: 'setSettings',
+                context: actionContext,
+                payload: { clearAction: e.target.value }
+            }));
+        });
+
+        connectToStreamDeck();
+    </script>
 </body>
 </html>
